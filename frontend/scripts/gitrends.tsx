@@ -1,4 +1,4 @@
-import React, {JSX, useEffect} from "react";
+import React, {useEffect} from "react";
 import ReactDOM from 'react-dom'
 
 import {
@@ -6,7 +6,7 @@ import {
     Switch,
     Route,
     Link,
-    useLocation, useParams
+    useLocation
 } from "react-router-dom";
 
 import {ChangeCouplingView} from "./views/changeCoupling";

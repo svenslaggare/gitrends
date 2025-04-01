@@ -1,2 +1,2 @@
-mod source_code_analysis;
+pub mod source_code_analysis;
 pub mod indexer;

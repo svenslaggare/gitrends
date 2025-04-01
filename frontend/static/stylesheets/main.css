@@ -54,3 +54,32 @@
 .modal {
     --bs-modal-width: 1350px;
 }
+
+.node {
+    cursor: zoom-in;
+}
+
+.node:hover {
+    stroke: #000;
+    stroke-width: 1.5px;
+}
+
+.node-root {
+    stroke: #777;
+    stroke-width: 2px;
+}
+
+.node-leaf {
+    stroke: #777;
+    stroke-width: 1px;
+}
+
+.node-root,
+.node-leaf {
+    pointer-events: none;
+}
+
+.node-text {
+    text-anchor: middle;
+    cursor: pointer;
+}

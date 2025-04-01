@@ -5,7 +5,7 @@ use std::sync::Arc;
 
 use chrono::Local;
 
-use serde::Deserialize;
+use serde::{Deserialize};
 
 use axum::response::{Html, IntoResponse, Response};
 use axum::{Json, Router};
@@ -18,6 +18,7 @@ use tower_http::services::ServeDir;
 
 use crate::indexing::indexer;
 use crate::querying::engine::{RepositoryQuerying};
+use crate::querying::model::{HotspotTree};
 use crate::web::WebAppResult;
 
 #[derive(Deserialize)]
@@ -42,6 +43,7 @@ pub async fn main(config: WebAppConfig) {
         .route("/{*path}", get(index))
 
         .route("/api/file/hotspots", get(get_file_hotspots))
+        .route("/api/file/hotspots-structure", get(get_file_hotspots_structure))
         .route("/api/file/change-coupling", get(get_file_change_coupling))
         .route("/api/file/history/{*file_name}", get(get_file_history))
 
@@ -76,6 +78,14 @@ async fn get_file_hotspots(
 ) -> WebAppResult<impl IntoResponse> {
     let count = query.get("count").map(|x| usize::from_str(x).ok()).flatten();
     Ok(Json(state.repository_querying.hotspots(count.or(Some(100))).await?))
+}
+
+async fn get_file_hotspots_structure(
+    State(state): State<Arc<WebAppState>>
+) -> WebAppResult<impl IntoResponse> {
+    let hotspots = state.repository_querying.hotspots(None).await?;
+    let hotspot_tree = HotspotTree::from_vec(&hotspots);
+    Ok(Json(hotspot_tree))
 }
 
 async fn get_file_change_coupling(

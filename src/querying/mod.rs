@@ -1,4 +1,4 @@
 pub mod engine;
-mod model;
-mod extras;
-mod printing;
+pub mod model;
+pub mod extras;
+pub mod printing;

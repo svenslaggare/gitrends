@@ -11,6 +11,7 @@ import {
 
 import {ChangeCouplingView} from "./views/changeCoupling";
 import {HotspotView} from "./views/hotspot";
+import {HotspotStructureView} from "./views/hotspotStructure";
 
 interface ApplicationMainProps {
 
@@ -55,24 +56,25 @@ class ApplicationMain extends React.Component<ApplicationMainProps, ApplicationM
 
                 <ul className="navbar-nav flex-row d-md-none">
                     <li className="nav-item text-nowrap">
-                        <button className="nav-link px-3 text-white" type="button" data-bs-toggle="collapse"
-                                data-bs-target="#navbarSearch" aria-controls="navbarSearch" aria-expanded="false"
-                                aria-label="Toggle search">
-
+                        <button
+                            className="nav-link px-3 text-white" type="button" data-bs-toggle="collapse"
+                            data-bs-target="#navbarSearch" aria-controls="navbarSearch" aria-expanded="false"
+                            aria-label="Toggle search"
+                        >
                         </button>
                     </li>
                     <li className="nav-item text-nowrap">
-                        <button className="nav-link px-3 text-white" type="button" data-bs-toggle="offcanvas"
-                                data-bs-target="#sidebarMenu" aria-controls="sidebarMenu" aria-expanded="false"
-                                aria-label="Toggle navigation">
-
+                        <button
+                            className="nav-link px-3 text-white" type="button" data-bs-toggle="offcanvas"
+                            data-bs-target="#sidebarMenu" aria-controls="sidebarMenu" aria-expanded="false"
+                            aria-label="Toggle navigation"
+                        >
                         </button>
                     </li>
                 </ul>
 
                 <div id="navbarSearch" className="navbar-search w-100 collapse">
-                    <input className="form-control w-100 rounded-0 border-0" type="text" placeholder="Search"
-                           aria-label="Search"/>
+                    <input className="form-control w-100 rounded-0 border-0" type="text" placeholder="Search" aria-label="Search"/>
                 </div>
             </header>
         );
@@ -93,6 +95,12 @@ class ApplicationMain extends React.Component<ApplicationMainProps, ApplicationM
                     </div>
                     <div className="offcanvas-body d-md-flex flex-column p-0 pt-lg-3 overflow-y-auto">
                         <ul className="nav flex-column">
+                            <li className="nav-item">
+                                <RenderLink to="/hotspots-structure">
+                                    <i className="fa-solid fa-sitemap" />
+                                    Hotspots structure
+                                </RenderLink>
+                            </li>
                             <li className="nav-item">
                                 <RenderLink to="/hotspots">
                                     <i className="fa-solid fa-fire" />
@@ -126,6 +134,9 @@ class ApplicationMain extends React.Component<ApplicationMainProps, ApplicationM
         return (
             <main className="col-md-9 ms-sm-auto col-lg-10 px-md-4">
                 <Switch>
+                    <Route path="/hotspots-structure">
+                        <HotspotStructureView />
+                    </Route>
                     <Route path="/hotspots">
                         <HotspotView />
                     </Route>

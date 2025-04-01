@@ -2,7 +2,7 @@ import React, {useEffect, useRef} from "react";
 import * as d3 from "d3";
 import Moment from "react-moment";
 
-import {FileHistoryEntry} from "./model";
+import {FileHistory, FileHistoryEntry} from "./model";
 
 export enum EntryType {
     File,
@@ -97,6 +97,36 @@ export class Table extends React.Component<TableProps, TableState> {
             </table>
         );
     }
+}
+
+export function SelectedFileModal({ name, selectedFile }: { name: string; selectedFile: FileHistory }) {
+    let renderContent = () => {
+        if (selectedFile == null) {
+            return null;
+        }
+
+        return (
+            <div className="modal-dialog">
+                <div className="modal-content">
+                    <div className="modal-header">
+                        <h1 className="modal-title fs-5" id={`${name}Label`}>
+                            {selectedFile.name} (n: {selectedFile.history.length})
+                        </h1>
+                        <button type="button" className="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div className="modal-body">
+                        <CodeComplexityTimeChart data={selectedFile.history} />
+                    </div>
+                </div>
+            </div>
+        );
+    };
+
+    return (
+        <div className="modal" id="showFileModal" tabIndex={-1} aria-labelledby={`${name}Label`} aria-hidden="true">
+            {renderContent()}
+        </div>
+    );
 }
 
 export function CodeComplexityTimeChart({ data }: { data: FileHistoryEntry[] }) {

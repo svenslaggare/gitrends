@@ -25,8 +25,8 @@ export function EntryTypeSwitcher({ current, onChange }: { current: EntryType; o
                 {iconForType(current)}
             </button>
             <ul className="dropdown-menu">
-                <li><a className="dropdown-item" href="#" onClick={() => { onChange(EntryType.File) }}>{iconForType(EntryType.File)} File</a></li>
-                <li><a className="dropdown-item" href="#" onClick={() => { onChange(EntryType.Module) }}>{iconForType(EntryType.Module)} Module</a></li>
+                <li><a className="dropdown-item" href="#file" onClick={() => { onChange(EntryType.File) }}>{iconForType(EntryType.File)} File</a></li>
+                <li><a className="dropdown-item" href="#module" onClick={() => { onChange(EntryType.Module) }}>{iconForType(EntryType.Module)} Module</a></li>
             </ul>
         </div>
     );
@@ -110,7 +110,7 @@ export function SelectedFileModal({ name, selectedFile }: { name: string; select
                 <div className="modal-content">
                     <div className="modal-header">
                         <h1 className="modal-title fs-5" id={`${name}Label`}>
-                            {selectedFile.name} (n: {selectedFile.history.length})
+                            {selectedFile.name} (revisions: {selectedFile.history.length})
                         </h1>
                         <button type="button" className="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>

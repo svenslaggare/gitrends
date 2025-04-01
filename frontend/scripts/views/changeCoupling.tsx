@@ -5,7 +5,7 @@ import {ChangeCoupling} from "../model";
 import {EntryType, EntryTypeSwitcher, Table} from "../viewHelpers";
 
 interface ChangeCouplingViewProps {
-
+    initialEntryType: EntryType
 }
 
 interface ChangeCouplingViewState {
@@ -20,7 +20,7 @@ export class ChangeCouplingView extends React.Component<ChangeCouplingViewProps,
         super(props);
 
         this.state = {
-            entryType: EntryType.File,
+            entryType: this.props.initialEntryType ?? EntryType.File,
             allChangeCoupling: [],
             specificChangeCoupling: []
         };

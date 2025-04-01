@@ -6,12 +6,13 @@ import {
     Switch,
     Route,
     Link,
-    useLocation
+    useLocation, useParams
 } from "react-router-dom";
 
 import {ChangeCouplingView} from "./views/changeCoupling";
 import {HotspotView} from "./views/hotspot";
 import {HotspotStructureView} from "./views/hotspotStructure";
+import {EntryType} from "./viewHelpers";
 
 interface ApplicationMainProps {
 
@@ -138,17 +139,41 @@ class ApplicationMain extends React.Component<ApplicationMainProps, ApplicationM
                         <HotspotStructureView />
                     </Route>
                     <Route path="/hotspots">
-                        <HotspotView />
+                        <RenderHotspotView />
                     </Route>
                     <Route path="/change-coupling">
-                        <ChangeCouplingView />
+                        <RenderChangeCouplingView />
                     </Route>
                     <Route path="/">
-                        <HotspotView />
+                        <HotspotStructureView />
                     </Route>
                 </Switch>
             </main>
         );
+    }
+}
+
+function RenderHotspotView() {
+    return <HotspotView initialEntryType={getEntryType(useLocation().hash)} />;
+}
+
+function RenderChangeCouplingView() {
+    return <ChangeCouplingView initialEntryType={getEntryType(useLocation().hash)} />;
+}
+
+function getEntryType(hash: string) {
+    let hashParts = hash.split("#");
+    if (hashParts.length == 2) {
+        switch (hashParts[1]) {
+            case "file":
+                return EntryType.File;
+            case "module":
+                return EntryType.Module;
+            default:
+                return null;
+        }
+    } else {
+        return null;
     }
 }
 

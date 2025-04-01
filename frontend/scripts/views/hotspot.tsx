@@ -3,11 +3,11 @@ import React from "react";
 import axios from "axios";
 
 import {fetchFileHistory, FileHistory, Hotspot} from "../model";
-import {CodeComplexityTimeChart, EntryType, EntryTypeSwitcher, SelectedFileModal, Table} from "../viewHelpers";
+import {EntryType, EntryTypeSwitcher, SelectedFileModal, Table} from "../viewHelpers";
 import {capitalize} from "../helpers";
 
 interface HotspotViewProps {
-
+    initialEntryType: EntryType
 }
 
 interface HotspotViewState {
@@ -24,7 +24,7 @@ export class HotspotView extends React.Component<HotspotViewProps, HotspotViewSt
         super(props);
 
         this.state = {
-            entryType: EntryType.File,
+            entryType: this.props.initialEntryType ?? EntryType.File,
             hotspots: [],
             selectedFile: null
         };

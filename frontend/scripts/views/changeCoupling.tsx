@@ -6,6 +6,7 @@ import {EntryType, EntryTypeSwitcher, Table} from "../viewHelpers";
 
 interface ChangeCouplingViewProps {
     initialEntryType: EntryType
+    onError: (response: any) => void;
 }
 
 interface ChangeCouplingViewState {
@@ -114,7 +115,7 @@ export class ChangeCouplingView extends React.Component<ChangeCouplingViewProps,
                 });
             })
             .catch(error => {
-                console.log(error);
+                this.props.onError(error);
             });
     }
 
@@ -126,7 +127,7 @@ export class ChangeCouplingView extends React.Component<ChangeCouplingViewProps,
                 });
             })
             .catch(error => {
-                console.log(error);
+                this.props.onError(error);
             });
     }
 

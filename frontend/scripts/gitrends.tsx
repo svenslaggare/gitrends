@@ -13,13 +13,14 @@ import {ChangeCouplingView} from "./views/changeCoupling";
 import {HotspotView} from "./views/hotspot";
 import {HotspotStructureView} from "./views/hotspotStructure";
 import {EntryType} from "./viewHelpers";
+import {getErrorMessage} from "./helpers";
 
 interface ApplicationMainProps {
 
 }
 
 interface ApplicationMainState {
-
+    errorMessage: string
 }
 
 class ApplicationMain extends React.Component<ApplicationMainProps, ApplicationMainState> {
@@ -27,7 +28,7 @@ class ApplicationMain extends React.Component<ApplicationMainProps, ApplicationM
         super(props);
 
         this.state = {
-
+            errorMessage: null
         };
     }
 
@@ -39,7 +40,7 @@ class ApplicationMain extends React.Component<ApplicationMainProps, ApplicationM
                 <div className="container-fluid">
                     <div className="row">
                         <Router>
-                            <ScrollToTop />
+                            <ScrollToTop/>
 
                             {this.renderSidebar()}
                             {this.renderMain()}
@@ -134,31 +135,65 @@ class ApplicationMain extends React.Component<ApplicationMainProps, ApplicationM
     renderMain() {
         return (
             <main className="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+                {this.renderError()}
+
                 <Switch>
                     <Route path="/hotspots-structure">
-                        <HotspotStructureView />
+                        <HotspotStructureView onError={error => { this.setError(error); }} />
                     </Route>
                     <Route path="/hotspots">
-                        <RenderHotspotView />
+                        <RenderHotspotView self={this} />
                     </Route>
                     <Route path="/change-coupling">
-                        <RenderChangeCouplingView />
+                        <RenderChangeCouplingView self={this} />
                     </Route>
                     <Route path="/">
-                        <HotspotStructureView />
+                        <HotspotStructureView onError={error => { this.setError(error); }} />
                     </Route>
                 </Switch>
             </main>
         );
     }
+
+    setError(error: any) {
+        this.setState({ errorMessage: getErrorMessage(error) });
+    }
+
+    renderError() {
+        if (this.state.errorMessage == null) {
+            return null;
+        }
+
+        return (
+            <div className="alert alert-danger alert-dismissible show" role="alert" style={{ margin: "1em" }}>
+                {this.state.errorMessage}
+                <button
+                    type="button" className="btn-close" aria-label="Close" style={{ }}
+                    onClick={() => {
+                        this.setState({ errorMessage: null });
+                    }}
+                ></button>
+            </div>
+        );
+    }
 }
 
-function RenderHotspotView() {
-    return <HotspotView initialEntryType={getEntryType(useLocation().hash)} />;
+function RenderHotspotView({ self }: { self: ApplicationMain }) {
+    return (
+        <HotspotView
+            initialEntryType={getEntryType(useLocation().hash)}
+            onError={error => { self.setError(error); }}
+        />
+    )
 }
 
-function RenderChangeCouplingView() {
-    return <ChangeCouplingView initialEntryType={getEntryType(useLocation().hash)} />;
+function RenderChangeCouplingView({ self }: { self: ApplicationMain }) {
+    return (
+        <ChangeCouplingView
+            initialEntryType={getEntryType(useLocation().hash)}
+            onError={error => { self.setError(error); }}
+        />
+    );
 }
 
 function getEntryType(hash: string) {
@@ -174,14 +209,6 @@ function getEntryType(hash: string) {
         }
     } else {
         return null;
-    }
-}
-
-function getErrorMessage(error) {
-    if (error.response !== undefined) {
-        return error.response.data.message;
-    } else {
-        return "Failed to send request.";
     }
 }
 

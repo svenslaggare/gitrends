@@ -7,7 +7,8 @@ import {EntryType, EntryTypeSwitcher, SelectedFileModal, Table} from "../viewHel
 import {capitalize} from "../helpers";
 
 interface HotspotViewProps {
-    initialEntryType: EntryType
+    initialEntryType: EntryType;
+    onError: (response: any) => void;
 }
 
 interface HotspotViewState {
@@ -91,7 +92,7 @@ export class HotspotView extends React.Component<HotspotViewProps, HotspotViewSt
                 this.showFileModal.show();
             },
             error => {
-                console.log(error);
+                this.props.onError(error);
             }
         );
     }
@@ -104,7 +105,7 @@ export class HotspotView extends React.Component<HotspotViewProps, HotspotViewSt
                 });
             })
             .catch(error => {
-                console.log(error);
+                this.props.onError(error);
             });
     }
 

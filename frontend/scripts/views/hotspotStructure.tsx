@@ -7,7 +7,7 @@ import {fetchFileHistory, FileHistory} from "../model";
 import {SelectedFileModal} from "../viewHelpers";
 
 interface HotspotStructureViewProps {
-
+    onError: (response: any) => void;
 }
 
 interface HotspotStructureViewState {
@@ -75,7 +75,7 @@ export class HotspotStructureView extends React.Component<HotspotStructureViewPr
                 this.showFileModal.show();
             },
             error => {
-                console.log(error);
+                this.props.onError(error);
             }
         );
     }
@@ -88,7 +88,7 @@ export class HotspotStructureView extends React.Component<HotspotStructureViewPr
                 });
             })
             .catch(error => {
-                console.log(error);
+                this.props.onError(error);
             });
     }
 }

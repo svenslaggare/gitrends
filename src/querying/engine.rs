@@ -3,6 +3,7 @@ use std::path::Path;
 use std::sync::Arc;
 
 use thiserror::Error;
+use serde::{Deserialize, Serialize};
 
 use datafusion::arrow::array::{Array, ArrayRef, AsArray, BooleanArray, RecordBatch, StringViewArray};
 use datafusion::arrow::datatypes::{DataType, Float64Type, Int64Type, UInt64Type};
@@ -12,6 +13,7 @@ use datafusion::error::DataFusionError;
 use datafusion::logical_expr::{ColumnarValue, Volatility};
 use datafusion::prelude::*;
 
+use crate::indexing::indexer::GitLogEntry;
 use crate::querying::extras::{IgnoreFile, ModuleDefinitionError, ModuleDefinitions};
 use crate::querying::model::{ChangeCoupling, FileHistoryEntry, Hotspot};
 
@@ -35,12 +37,27 @@ impl From<ModuleDefinitionError> for QueryingError {
     }
 }
 
+#[derive(Clone, Deserialize, Serialize)]
+pub struct RepositoryQueryingConfig {
+    pub min_date: Option<i64>,
+    pub max_date: Option<i64>
+}
+
+impl Default for RepositoryQueryingConfig {
+    fn default() -> Self {
+        RepositoryQueryingConfig {
+            min_date: None,
+            max_date: None
+        }
+    }
+}
+
 pub struct RepositoryQuerying {
     pub ctx: SessionContext
 }
 
 impl RepositoryQuerying {
-    pub async fn new(data_directory: &Path) -> Result<RepositoryQuerying, QueryingError> {
+    pub async fn new(data_directory: &Path, config: RepositoryQueryingConfig) -> Result<RepositoryQuerying, QueryingError> {
         let ctx = SessionContext::new();
 
         ctx.register_parquet(
@@ -125,14 +142,18 @@ impl RepositoryQuerying {
         ctx.register_udf(extract_module_name.clone());
 
         ctx.sql(
-            r#"
-            CREATE VIEW git_file_entries AS
-            SELECT
-                *
-            FROM all_git_entries
-            WHERE
-                exists_at_head AND NOT is_ignored(file_name)
-            "#
+            &format!(
+                r#"
+                CREATE VIEW git_file_entries AS
+                SELECT
+                    *
+                FROM all_git_entries
+                WHERE
+                    exists_at_head AND NOT is_ignored(file_name) AND date >= {} AND date <= {}
+                "#,
+                config.min_date.unwrap_or(0),
+                config.max_date.unwrap_or(i64::MAX)
+            )
         ).await?;
 
         ctx.sql(
@@ -220,6 +241,35 @@ impl RepositoryQuerying {
         ).await?;
 
         Ok(RepositoryQuerying { ctx })
+    }
+
+    pub async fn log(&self) -> Result<Vec<GitLogEntry>, QueryingError> {
+        let result_df = self.ctx.sql(
+            r#"
+            SELECT
+                revision, date, author, commit_message
+            FROM git_log
+            ORDER BY date;
+            "#
+        ).await?;
+
+        let mut entries = Vec::new();
+        yield_rows(
+            result_df.collect().await?,
+            4,
+            |columns, row_index| {
+                entries.push(
+                    GitLogEntry {
+                        revision: columns[0].as_string_view().value(row_index).to_owned(),
+                        date: columns[1].as_primitive::<Int64Type>().value(row_index),
+                        author: columns[2].as_string_view().value(row_index).to_owned(),
+                        commit_message: columns[3].as_string_view().value(row_index).to_owned(),
+                    }
+                );
+            }
+        );
+
+        Ok(entries)
     }
 
     pub async fn hotspots(&self, count: Option<usize>) -> Result<Vec<Hotspot>, QueryingError> {

@@ -4,6 +4,7 @@ use std::path::Path;
 
 use chrono::{DateTime, FixedOffset, TimeZone, Utc};
 use thiserror::Error;
+use serde::Serialize;
 
 use git2::{Commit, ObjectType, Oid, Repository, TreeWalkMode, TreeWalkResult};
 
@@ -15,7 +16,7 @@ use parquet_derive::{ParquetRecordWriter};
 
 use crate::indexing::source_code_analysis::calculate_source_code_stats;
 
-#[derive(Default, Debug, ParquetRecordWriter)]
+#[derive(Default, Debug, ParquetRecordWriter, Serialize)]
 pub struct GitLogEntry {
     pub revision: String,
     pub date: i64,

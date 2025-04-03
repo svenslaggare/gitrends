@@ -83,3 +83,7 @@
     text-anchor: middle;
     cursor: pointer;
 }
+
+.action-icon {
+    cursor: pointer;
+}

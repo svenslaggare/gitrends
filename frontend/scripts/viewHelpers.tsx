@@ -202,3 +202,29 @@ export function CodeComplexityTimeChart({ data }: { data: FileHistoryEntry[] }) 
         </svg>
     );
 }
+
+export function AlertBox({ className, message, onClose }: { className: string; message: string; onClose: () => void }) {
+    if (message == null) {
+        return null;
+    }
+
+    return (
+        <div className={`alert ${className} alert-dismissible show`} role="alert" style={{ margin: "1em" }}>
+            {message}
+            <button
+                type="button" className="btn-close" aria-label="Close"
+                onClick={() => {
+                    onClose();
+                }}
+            ></button>
+        </div>
+    );
+}
+
+export function Conditional({ condition, trueBranch, falseBranch }: { condition: boolean; trueBranch: () => JSX.Element; falseBranch: () => JSX.Element }) {
+    if (condition) {
+        return trueBranch();
+    } else {
+        return falseBranch();
+    }
+}

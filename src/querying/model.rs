@@ -161,10 +161,8 @@ impl HotspotTree {
     pub fn from_vec(hotspots: &Vec<Hotspot>) -> HotspotTree {
         HotspotTree::from_raw(RawHotspotTree::from_vec(hotspots))
     }
-}
 
-impl HotspotTree {
-    pub fn from_raw(root: RawHotspotTree) -> HotspotTree {
+    fn from_raw(root: RawHotspotTree) -> HotspotTree {
         match root {
             RawHotspotTree::Tree { name, children } => {
                 let mut children = children

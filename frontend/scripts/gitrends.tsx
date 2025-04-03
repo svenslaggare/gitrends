@@ -12,8 +12,9 @@ import {
 import {ChangeCouplingView} from "./views/changeCoupling";
 import {HotspotView} from "./views/hotspot";
 import {HotspotStructureView} from "./views/hotspotStructure";
-import {EntryType} from "./viewHelpers";
+import {AlertBox, EntryType} from "./viewHelpers";
 import {getErrorMessage} from "./helpers";
+import {TimelineView} from "./views/timeline";
 
 interface ApplicationMainProps {
 
@@ -115,6 +116,12 @@ class ApplicationMain extends React.Component<ApplicationMainProps, ApplicationM
                                     Change coupling
                                 </RenderLink>
                             </li>
+                            <li className="nav-item">
+                                <RenderLink to="/timeline">
+                                    <i className="fa-solid fa-timeline" />
+                                    Timeline
+                                </RenderLink>
+                            </li>
                         </ul>
 
                         <hr className="my-3"/>
@@ -135,7 +142,11 @@ class ApplicationMain extends React.Component<ApplicationMainProps, ApplicationM
     renderMain() {
         return (
             <main className="col-md-9 ms-sm-auto col-lg-10 px-md-4">
-                {this.renderError()}
+                <AlertBox
+                    className="alert-danger"
+                    message={this.state.errorMessage}
+                    onClose={() => { this.setState({ errorMessage: null }); }}
+                />
 
                 <Switch>
                     <Route path="/hotspots-structure">
@@ -147,6 +158,9 @@ class ApplicationMain extends React.Component<ApplicationMainProps, ApplicationM
                     <Route path="/change-coupling">
                         <RenderChangeCouplingView self={this} />
                     </Route>
+                    <Route path="/timeline">
+                        <TimelineView onError={error => { this.setError(error); }} />
+                    </Route>
                     <Route path="/">
                         <HotspotStructureView onError={error => { this.setError(error); }} />
                     </Route>
@@ -157,24 +171,6 @@ class ApplicationMain extends React.Component<ApplicationMainProps, ApplicationM
 
     setError(error: any) {
         this.setState({ errorMessage: getErrorMessage(error) });
-    }
-
-    renderError() {
-        if (this.state.errorMessage == null) {
-            return null;
-        }
-
-        return (
-            <div className="alert alert-danger alert-dismissible show" role="alert" style={{ margin: "1em" }}>
-                {this.state.errorMessage}
-                <button
-                    type="button" className="btn-close" aria-label="Close" style={{ }}
-                    onClick={() => {
-                        this.setState({ errorMessage: null });
-                    }}
-                ></button>
-            </div>
-        );
     }
 }
 

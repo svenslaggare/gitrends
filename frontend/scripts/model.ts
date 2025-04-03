@@ -47,3 +47,10 @@ export function fetchFileHistory(fileName: string,
             failure(error);
         });
 }
+
+export interface GitLogEntry {
+    revision: string;
+    date: number;
+    author: string;
+    commit_message: string;
+}

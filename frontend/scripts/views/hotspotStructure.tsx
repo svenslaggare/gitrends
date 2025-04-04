@@ -160,7 +160,7 @@ function StructureChart({ hotspotTree, onFileSelect }: { hotspotTree: HotspotTre
             newFocus = node.parent;
         }
 
-        setFocus(focus.data == newFocus.data ? rootNode : newFocus);
+        setFocus(focus.data == newFocus.data ? node.parent : newFocus);
     };
 
     return (

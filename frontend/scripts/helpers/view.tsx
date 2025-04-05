@@ -1,9 +1,5 @@
 import React from "react";
 
-import {ChangeCoupling, fetchFileHistory, FileHistory} from "../model";
-import {CodeComplexityTimeChart} from "./charts";
-import {OnError} from "./misc";
-
 export enum EntryType {
     File,
     Module
@@ -36,60 +32,94 @@ export function EntryTypeSwitcher({ current, onChange }: { current: EntryType; o
     );
 }
 
+export interface TableSortOrder {
+    columnIndex: number;
+    order: number;
+}
+
 export interface TableColumn {
+    name: string;
     display: string;
     clickable: boolean;
 }
 
 interface TableProps {
-    columns: { [name: string]: TableColumn };
+    columns: TableColumn[];
     rows: any[];
     extractColumn: (row: any, name: string) => any;
     onValueClick?: (rowIndex: number, column: string) => void;
+    initialSortOrder: TableSortOrder;
 }
 
 interface TableState {
-
+    hasSetTableSortOrder: boolean;
+    tableSortOrder: TableSortOrder;
 }
 
 export class Table extends React.Component<TableProps, TableState> {
     constructor(props) {
         super(props);
+
+        this.state = {
+            hasSetTableSortOrder: false,
+            tableSortOrder: this.props.initialSortOrder
+        }
     }
 
     render() {
+        let rows = [...this.props.rows];
+
+        if (this.state.hasSetTableSortOrder) {
+            let tableSortOrder = this.state.tableSortOrder;
+            let column = this.props.columns[tableSortOrder.columnIndex];
+            rows.sort((a, b) => this.sortRow(column, a, b) * tableSortOrder.order);
+        }
+
         return (
             <table className="table table-striped table-sm">
                 <thead>
                 <tr>
                     <th scope="col">#</th>
                     {
-                        Object.entries(this.props.columns).map(([_, column], columnIndex) =>
-                            <th scope="col" key={columnIndex}>{column.display}</th>
+                        this.props.columns.map((column, columnIndex) =>
+                            <th
+                                key={columnIndex}
+                                scope="col"
+                                className="sortable-column-header"
+                                onClick={() => {
+                                    this.setState({
+                                        hasSetTableSortOrder: true,
+                                        tableSortOrder: {
+                                            columnIndex: columnIndex,
+                                            order: this.state.tableSortOrder.columnIndex == columnIndex ? -this.state.tableSortOrder.order : -1
+                                        }
+                                    });
+                                }}
+                            >
+                                {column.display}
+                            </th>
                         )
                     }
                 </tr>
                 </thead>
                 <tbody>
                 {
-                    this.props.rows.map((row, rowIndex) =>
+                    rows.map((row, rowIndex) =>
                         <tr key={rowIndex}>
                             <td>{rowIndex + 1}</td>
                             {
-                                Object.entries(this.props.columns).map(([key, _], columnIndex) => {
-                                    let column = this.props.columns[key];
-
+                                this.props.columns.map((column, columnIndex) => {
                                     return (
                                         <td
                                             key={columnIndex}
                                             className={`${column.clickable ? "clickable-column" : ""}`}
                                             onClick={() => {
                                                 if (column.clickable) {
-                                                    this.props?.onValueClick(rowIndex, key);
+                                                    this.props?.onValueClick(rowIndex, column.name);
                                                 }
                                             }}
                                         >
-                                            {this.props.extractColumn(row, key)}
+                                            {this.props.extractColumn(row, column.name)}
                                         </td>
                                     );
                                 })
@@ -100,6 +130,24 @@ export class Table extends React.Component<TableProps, TableState> {
                 </tbody>
             </table>
         );
+    }
+
+    sortRow(column: TableColumn, row1: any, row2: any) {
+        let columnName = column.name;
+        let value1 = this.props.extractColumn(row1, columnName);
+        let value2 = this.props.extractColumn(row2, columnName);
+
+        if (typeof value1 == "string") {
+            if (value1 > value2) {
+                return 1;
+            } else if (value1 < value2) {
+                return -1;
+            } else {
+                return 0;
+            }
+        }
+
+        return value1 - value2;
     }
 }
 

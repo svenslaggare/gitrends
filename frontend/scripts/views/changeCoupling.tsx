@@ -84,13 +84,13 @@ export class ChangeCouplingView extends React.Component<ChangeCouplingViewProps,
                 </div>
 
                 <Table
-                    columns={{
-                        "left_name": {display: `Left ${entryType} name`, clickable: true},
-                        "right_name": {display: `Right ${entryType} name`, clickable: true},
-                        "coupled_revisions": {display: "Number of coupled revisions", clickable: false},
-                        "average_revisions": {display: "Average number of revisions", clickable: false },
-                        "coupling_ratio": { display: "Amount of coupling (%)", clickable: false }
-                    }}
+                    columns={[
+                        { name: "left_name", display: `Left ${entryType} name`, clickable: true },
+                        { name: "right_name", display: `Right ${entryType} name`, clickable: true },
+                        { name: "coupled_revisions", display: "Number of coupled revisions", clickable: false },
+                        { name: "average_revisions", display: "Average number of revisions", clickable: false },
+                        { name: "coupling_ratio", display: "Amount of coupling (%)", clickable: false }
+                    ]}
                     rows={changeCoupling}
                     extractColumn={(row: ChangeCoupling, name) => {
                         let averageRevisions = Math.ceil((row.num_left_revisions + row.num_right_revisions) / 2.0);
@@ -118,6 +118,10 @@ export class ChangeCouplingView extends React.Component<ChangeCouplingViewProps,
                                 this.fetchForFile(changeCoupling[rowIndex][column]);
                                 break;
                         }
+                    }}
+                    initialSortOrder={{
+                        columnIndex: 2,
+                        order: -1
                     }}
                 />
             </div>

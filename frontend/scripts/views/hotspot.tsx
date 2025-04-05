@@ -57,21 +57,26 @@ export class HotspotView extends React.Component<HotspotViewProps, HotspotViewSt
                 </div>
 
                 <Table
-                    columns={{
-                        "name": {
+                    columns={[
+                        {
+                            name: "name",
                             display: `${capitalize(this.entryTypeName())} name`,
                             clickable: this.state.entryType == EntryType.File
                         },
-                        "num_revisions": { display: "Number of revisions", clickable: false },
-                        "num_code_lines": { display: "Number of code lines", clickable: false },
-                        "total_indent_levels": { display: "Complexity", clickable: false }
-                    }}
+                        { name: "num_revisions", display: "Number of revisions", clickable: false },
+                        { name: "num_code_lines", display: "Number of code lines", clickable: false },
+                        { name: "total_indent_levels", display: "Complexity", clickable: false }
+                    ]}
                     rows={this.state.hotspots}
                     extractColumn={(row, name) => row[name]}
                     onValueClick={(rowIndex, column) => {
                         if (column == "name") {
                             this.showSelectedFileModal.current.show(this.state.hotspots[rowIndex][column]);
                         }
+                    }}
+                    initialSortOrder={{
+                        columnIndex: 1,
+                        order: -1
                     }}
                 />
             </div>

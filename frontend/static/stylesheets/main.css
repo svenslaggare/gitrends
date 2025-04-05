@@ -87,3 +87,7 @@
 .action-icon {
     cursor: pointer;
 }
+
+.sortable-column-header {
+    cursor: pointer;
+}

@@ -33,7 +33,7 @@ export class HotspotStructureView extends React.Component<HotspotStructureViewPr
                 <ShowSelectedFileModal ref={this.showSelectedFileModal} onError={this.props.onError} />
 
                 <div className="pt-3 pb-2 mb-3 border-bottom">
-                    <h1 className="h2">Hotspots structure</h1>
+                    <h1 className="h2">Hotspots</h1>
                 </div>
 
                 {this.renderChart()}

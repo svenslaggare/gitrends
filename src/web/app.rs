@@ -67,6 +67,7 @@ pub async fn main(config: WebAppConfig) {
 
         .route("/api/module/hotspots", get(get_module_hotspots))
         .route("/api/module/change-coupling", get(get_module_change_coupling))
+        .route("/api/module/change-coupling-structure", get(get_module_change_coupling_structure))
 
         .with_state(state.clone())
         ;
@@ -213,7 +214,7 @@ async fn get_file_change_coupling_structure(
     let repository_querying = state.repository_querying.load();
 
     let change_couplings = repository_querying.change_couplings(None).await?;
-    let change_coupling_tree = ChangeCouplingTree::from_vec(&change_couplings, 15, 0.2);
+    let change_coupling_tree = ChangeCouplingTree::from_vec(&change_couplings, true, 15, 0.2);
     Ok(Json(change_coupling_tree))
 }
 
@@ -254,6 +255,17 @@ async fn get_module_change_coupling(
         }
     }
 }
+
+async fn get_module_change_coupling_structure(
+    State(state): State<Arc<WebAppState>>
+) -> WebAppResult<impl IntoResponse> {
+    let repository_querying = state.repository_querying.load();
+
+    let change_couplings = repository_querying.module_change_couplings(None).await?;
+    let change_coupling_tree = ChangeCouplingTree::from_vec(&change_couplings, false, 2, 0.1);
+    Ok(Json(change_coupling_tree))
+}
+
 
 #[derive(Template)]
 #[template(path="gitrends.html")]

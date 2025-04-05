@@ -160,7 +160,7 @@ class ApplicationMain extends React.Component<ApplicationMainProps, ApplicationM
                         <RenderChangeCouplingView self={this} />
                     </Route>
                     <Route path="/change-coupling-structure">
-                        <ChangeCouplingStructureView onError={error => { this.setError(error); }} />
+                        <RenderChangeCouplingStructureView self={this} />
                     </Route>
                     <Route path="/timeline">
                         <TimelineView onError={error => { this.setError(error); }} />
@@ -190,6 +190,15 @@ function RenderHotspotView({ self }: { self: ApplicationMain }) {
 function RenderChangeCouplingView({ self }: { self: ApplicationMain }) {
     return (
         <ChangeCouplingView
+            initialEntryType={getEntryType(useLocation().hash)}
+            onError={error => { self.setError(error); }}
+        />
+    );
+}
+
+function RenderChangeCouplingStructureView({ self }: { self: ApplicationMain }) {
+    return (
+        <ChangeCouplingStructureView
             initialEntryType={getEntryType(useLocation().hash)}
             onError={error => { self.setError(error); }}
         />

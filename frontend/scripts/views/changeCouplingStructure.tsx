@@ -4,12 +4,16 @@ import * as d3 from "d3";
 import axios from "axios";
 
 import {OnError} from "../helpers/misc";
+import {EntryType, EntryTypeSwitcher} from "../helpers/view";
 
 interface ChangeCouplingStructureViewProps {
+    initialEntryType: EntryType;
     onError: OnError;
 }
 
 interface ChangeCouplingStructureViewState {
+    entryType: EntryType;
+
     changeCouplingTree: ChangeCouplingTree;
 }
 
@@ -18,6 +22,7 @@ export class ChangeCouplingStructureView extends React.Component<ChangeCouplingS
         super(props);
 
         this.state = {
+            entryType: this.props.initialEntryType ?? EntryType.File,
             changeCouplingTree: null
         }
 
@@ -28,7 +33,22 @@ export class ChangeCouplingStructureView extends React.Component<ChangeCouplingS
         return (
             <div>
                 <div className="pt-3 pb-2 mb-3 border-bottom">
-                    <h1 className="h2">Change coupling structure</h1>
+                    <EntryTypeSwitcher
+                        current={this.state.entryType}
+                        onChange={entryType => {
+                            this.setState(
+                                {
+                                    entryType: entryType,
+                                    changeCouplingTree: null
+                                },
+                                () => {
+                                    this.fetchStructure();
+                                }
+                            );
+                        }}
+                    />
+
+                    <h1 className="h2">Change coupling</h1>
                 </div>
 
                 {this.renderChart()}
@@ -49,7 +69,7 @@ export class ChangeCouplingStructureView extends React.Component<ChangeCouplingS
     }
 
     fetchStructure() {
-        axios.get(`/api/file/change-coupling-structure`)
+        axios.get(`/api/${this.entryTypeName()}/change-coupling-structure`)
             .then(response => {
                 this.setState({
                     changeCouplingTree: response.data
@@ -58,6 +78,15 @@ export class ChangeCouplingStructureView extends React.Component<ChangeCouplingS
             .catch(error => {
                 this.props.onError(error);
             });
+    }
+
+    entryTypeName() {
+        switch (this.state.entryType) {
+            case EntryType.File:
+                return "file";
+            case EntryType.Module:
+                return "module";
+        }
     }
 }
 

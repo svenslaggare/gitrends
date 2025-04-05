@@ -266,11 +266,12 @@ pub enum ChangeCouplingTree {
 impl ChangeCouplingTree {
     pub fn from_vec(
         change_couplings: &Vec<ChangeCoupling>,
+        split_at_path_separator: bool,
         min_coupled_revisions: u64,
-        min_coupling_ratio: f64
+        min_coupling_ratio: f64,
     ) -> ChangeCouplingTree {
         ChangeCouplingTree::from_raw(
-            RawChangeCouplingTree::from_vec(change_couplings),
+            RawChangeCouplingTree::from_vec(change_couplings, split_at_path_separator),
             min_coupled_revisions,
             min_coupling_ratio
         )
@@ -285,7 +286,8 @@ impl ChangeCouplingTree {
             RawChangeCouplingTree::Tree { name, children } => {
                 let mut children = children
                     .into_values()
-                    .map(|value| ChangeCouplingTree::from_raw(value, min_coupled_revisions, min_coupling_ratio))
+                    .map(|tree| ChangeCouplingTree::from_raw(tree, min_coupled_revisions, min_coupling_ratio))
+                    .filter(|tree| !tree.is_empty_leaf())
                     .collect::<Vec<_>>();
 
                 children.sort_by_key(|child| child.name().to_owned());
@@ -315,6 +317,13 @@ impl ChangeCouplingTree {
             ChangeCouplingTree::Leaf { name, .. } => &name
         }
     }
+
+    pub fn is_empty_leaf(&self) -> bool {
+        match self {
+            ChangeCouplingTree::Tree { .. } => false,
+            ChangeCouplingTree::Leaf { couplings, .. } => couplings.is_empty(),
+        }
+    }
 }
 
 #[derive(Debug, Serialize)]
@@ -336,16 +345,18 @@ enum RawChangeCouplingTree {
 }
 
 impl RawChangeCouplingTree {
-    pub fn from_vec(change_coupling: &Vec<ChangeCoupling>) -> RawChangeCouplingTree {
+    pub fn from_vec(change_coupling: &Vec<ChangeCoupling>, split_at_path_separator: bool) -> RawChangeCouplingTree {
         let mut root = RawChangeCouplingTree::Tree {
             name: String::new(),
             children: HashMap::new()
         };
 
-        fn update_coupling(root: &mut RawChangeCouplingTree,
-                           name1: &str,
-                           name2: &str,
-                           change_coupling: &ChangeCoupling) {
+        fn update_coupling(
+            root: &mut RawChangeCouplingTree,
+            name1: &str,
+            name2: &str,
+            change_coupling: &ChangeCoupling
+        ) {
             let mut current = root;
 
             let path = std::path::Path::new(&name1);
@@ -385,9 +396,47 @@ impl RawChangeCouplingTree {
             }
         }
 
+        fn update_coupling_non_split(
+            root: &mut RawChangeCouplingTree,
+            name1: &str,
+            name2: &str,
+            change_coupling: &ChangeCoupling
+        ) {
+            let mut current = root;
+
+            match current {
+                RawChangeCouplingTree::Tree { children, .. } => {
+                    let entry = children.entry(name1.to_owned()).or_insert_with(|| {
+                        RawChangeCouplingTree::Leaf {
+                            name: name1.to_owned(),
+                            couplings: Vec::new()
+                        }
+                    });
+
+                    if let RawChangeCouplingTree::Leaf { couplings: coupling, .. } = entry {
+                        coupling.push(
+                            Coupling {
+                                coupled: name2.to_owned(),
+                                coupled_revisions: change_coupling.coupled_revisions,
+                                coupling_ratio: change_coupling.coupling_ratio()
+                            }
+                        );
+                    }
+
+                    current = entry;
+                }
+                RawChangeCouplingTree::Leaf { .. } => {}
+            }
+        }
+
         for change_coupling in change_coupling {
-            update_coupling(&mut root, &change_coupling.left_name, &change_coupling.right_name, change_coupling);
-            update_coupling(&mut root, &change_coupling.right_name, &change_coupling.left_name, change_coupling);
+            if split_at_path_separator {
+                update_coupling(&mut root, &change_coupling.left_name, &change_coupling.right_name, change_coupling);
+                update_coupling(&mut root, &change_coupling.right_name, &change_coupling.left_name, change_coupling);
+            } else {
+                update_coupling_non_split(&mut root, &change_coupling.left_name, &change_coupling.right_name, change_coupling);
+                update_coupling_non_split(&mut root, &change_coupling.right_name, &change_coupling.left_name, change_coupling);
+            }
         }
 
         root

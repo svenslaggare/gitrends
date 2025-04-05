@@ -3,8 +3,7 @@ import React, {useState} from "react";
 import * as d3 from "d3";
 import axios from "axios";
 
-import {fetchFileHistory, FileHistory} from "../model";
-import {SelectedFileModal} from "../viewHelpers";
+import {ShowSelectedFileModal} from "../viewHelpers";
 import {OnError} from "../helpers";
 
 interface HotspotStructureViewProps {
@@ -13,18 +12,16 @@ interface HotspotStructureViewProps {
 
 interface HotspotStructureViewState {
     hotspotTree: HotspotTree;
-    selectedFile: FileHistory;
 }
 
 export class HotspotStructureView extends React.Component<HotspotStructureViewProps, HotspotStructureViewState> {
-    showFileModal: any;
+    showSelectedFileModal = React.createRef<ShowSelectedFileModal>();
 
     constructor(props) {
         super(props);
 
         this.state = {
-            hotspotTree: null,
-            selectedFile: null
+            hotspotTree: null
         }
 
         this.fetchStructure();
@@ -33,7 +30,7 @@ export class HotspotStructureView extends React.Component<HotspotStructureViewPr
     render() {
         return (
             <div>
-                <SelectedFileModal name="selectedFileModal" selectedFile={this.state.selectedFile} />
+                <ShowSelectedFileModal ref={this.showSelectedFileModal} onError={this.props.onError} />
 
                 <div className="pt-3 pb-2 mb-3 border-bottom">
                     <h1 className="h2">Hotspots structure</h1>
@@ -55,29 +52,11 @@ export class HotspotStructureView extends React.Component<HotspotStructureViewPr
                     hotspotTree={this.state.hotspotTree}
                     onFileSelect={(fileName, leaf) => {
                         if (leaf) {
-                            this.showSelectedFileModal(fileName);
+                            this.showSelectedFileModal.current.show(fileName);
                         }
                     }}
                 />
             </div>
-        );
-    }
-
-    showSelectedFileModal(fileName: string) {
-        fetchFileHistory(
-            fileName,
-            fileHistory => {
-                this.setState({
-                    selectedFile: fileHistory
-                });
-
-                // @ts-ignore
-                this.showFileModal = new bootstrap.Modal(document.getElementById("showFileModal"));
-                this.showFileModal.show();
-            },
-            error => {
-                this.props.onError(error);
-            }
         );
     }
 

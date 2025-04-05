@@ -16,7 +16,7 @@ interface ChangeCouplingViewState {
     allChangeCoupling: ChangeCoupling[];
     specificChangeCoupling: ChangeCoupling[];
 
-    selectedFileName: string;
+    selectedName: string;
 }
 
 export class ChangeCouplingView extends React.Component<ChangeCouplingViewProps, ChangeCouplingViewState> {
@@ -29,7 +29,7 @@ export class ChangeCouplingView extends React.Component<ChangeCouplingViewProps,
             entryType: this.props.initialEntryType ?? EntryType.File,
             allChangeCoupling: [],
             specificChangeCoupling: [],
-            selectedFileName: null,
+            selectedName: null,
         };
 
         this.fetchAll();
@@ -53,7 +53,7 @@ export class ChangeCouplingView extends React.Component<ChangeCouplingViewProps,
 
                                     this.setState({
                                         specificChangeCoupling: [],
-                                        selectedFileName: null
+                                        selectedName: null
                                     });
                                 }}
                             />
@@ -70,7 +70,7 @@ export class ChangeCouplingView extends React.Component<ChangeCouplingViewProps,
                                     entryType: entryType,
                                     allChangeCoupling: [],
                                     specificChangeCoupling: [],
-                                    selectedFileName: null,
+                                    selectedName: null,
                                 },
                                 () => {
                                     this.fetchAll();
@@ -105,11 +105,11 @@ export class ChangeCouplingView extends React.Component<ChangeCouplingViewProps,
                     onValueClick={(rowIndex, column) => {
                         switch (column) {
                             case "left_name":
-                                let newFileName = changeCoupling[rowIndex][column];
-                                if (this.state.selectedFileName == newFileName) {
-                                    this.showSelectedFileModal.current.show(newFileName);
+                                let newName = changeCoupling[rowIndex][column];
+                                if (this.state.selectedName == newName && this.state.entryType == EntryType.File) {
+                                    this.showSelectedFileModal.current.show(newName);
                                 } else {
-                                    this.fetchForFile(newFileName);
+                                    this.fetchForFile(newName);
                                 }
 
                                 break;
@@ -147,7 +147,7 @@ export class ChangeCouplingView extends React.Component<ChangeCouplingViewProps,
         axios.get(`/api/${this.entryTypeName()}/change-coupling?name=${fileName}`)
             .then(response => {
                 this.setState({
-                    selectedFileName: fileName,
+                    selectedName: fileName,
                     specificChangeCoupling: response.data
                 });
             })

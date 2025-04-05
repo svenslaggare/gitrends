@@ -1,12 +1,13 @@
 import React from "react";
 import axios from "axios";
+import Moment from "react-moment";
 
 import {GitLogEntry} from "../model";
-import Moment from "react-moment";
 import {AlertBox, Conditional} from "../viewHelpers";
+import {OnError} from "../helpers";
 
 interface TimelineViewProps {
-    onError: (response: any) => void;
+    onError: OnError;
 }
 
 interface TimelineViewState {

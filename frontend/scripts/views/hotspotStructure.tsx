@@ -5,9 +5,10 @@ import axios from "axios";
 
 import {fetchFileHistory, FileHistory} from "../model";
 import {SelectedFileModal} from "../viewHelpers";
+import {OnError} from "../helpers";
 
 interface HotspotStructureViewProps {
-    onError: (response: any) => void;
+    onError: OnError;
 }
 
 interface HotspotStructureViewState {

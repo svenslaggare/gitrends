@@ -3,8 +3,10 @@ import React, {useRef} from "react";
 import * as d3 from "d3";
 import axios from "axios";
 
+import {OnError} from "../helpers";
+
 interface ChangeCouplingStructureViewProps {
-    onError: (response: any) => void;
+    onError: OnError;
 }
 
 interface ChangeCouplingStructureViewState {
@@ -12,8 +14,6 @@ interface ChangeCouplingStructureViewState {
 }
 
 export class ChangeCouplingStructureView extends React.Component<ChangeCouplingStructureViewProps, ChangeCouplingStructureViewState> {
-    showFileModal: any;
-
     constructor(props) {
         super(props);
 

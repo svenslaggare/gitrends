@@ -4,11 +4,11 @@ import axios from "axios";
 
 import {fetchFileHistory, FileHistory, Hotspot} from "../model";
 import {EntryType, EntryTypeSwitcher, SelectedFileModal, Table} from "../viewHelpers";
-import {capitalize} from "../helpers";
+import {capitalize, OnError} from "../helpers";
 
 interface HotspotViewProps {
     initialEntryType: EntryType;
-    onError: (response: any) => void;
+    onError: OnError;
 }
 
 interface HotspotViewState {

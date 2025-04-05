@@ -2,11 +2,12 @@ import React from "react";
 import axios from "axios";
 
 import {ChangeCoupling} from "../model";
-import {EntryType, EntryTypeSwitcher, Table} from "../viewHelpers";
+import {EntryType, EntryTypeSwitcher, ShowSelectedFileModal, Table} from "../viewHelpers";
+import {OnError} from "../helpers";
 
 interface ChangeCouplingViewProps {
     initialEntryType: EntryType
-    onError: (response: any) => void;
+    onError: OnError;
 }
 
 interface ChangeCouplingViewState {
@@ -14,16 +15,21 @@ interface ChangeCouplingViewState {
 
     allChangeCoupling: ChangeCoupling[];
     specificChangeCoupling: ChangeCoupling[];
+
+    selectedFileName: string;
 }
 
 export class ChangeCouplingView extends React.Component<ChangeCouplingViewProps, ChangeCouplingViewState> {
+    showSelectedFileModal = React.createRef<ShowSelectedFileModal>();
+
     constructor(props) {
         super(props);
 
         this.state = {
             entryType: this.props.initialEntryType ?? EntryType.File,
             allChangeCoupling: [],
-            specificChangeCoupling: []
+            specificChangeCoupling: [],
+            selectedFileName: null,
         };
 
         this.fetchAll();
@@ -35,13 +41,20 @@ export class ChangeCouplingView extends React.Component<ChangeCouplingViewProps,
 
         return (
             <div>
+                <ShowSelectedFileModal ref={this.showSelectedFileModal} onError={this.props.onError} />
+
                 <div className="pt-3 pb-2 mb-3 border-bottom">
                     {
                         this.state.specificChangeCoupling.length > 0 ?
                             <button
                                 type="button" className="btn-close" aria-label="Close" style={{ float: "right", padding: "10px" }}
                                 onClick={() => {
-                                    this.setState({specificChangeCoupling: []});
+                                    this.showSelectedFileModal.current.clear();
+
+                                    this.setState({
+                                        specificChangeCoupling: [],
+                                        selectedFileName: null
+                                    });
                                 }}
                             />
                             : null
@@ -50,11 +63,14 @@ export class ChangeCouplingView extends React.Component<ChangeCouplingViewProps,
                     <EntryTypeSwitcher
                         current={this.state.entryType}
                         onChange={entryType => {
+                            this.showSelectedFileModal.current.clear();
+
                             this.setState(
                                 {
                                     entryType: entryType,
                                     allChangeCoupling: [],
                                     specificChangeCoupling: [],
+                                    selectedFileName: null,
                                 },
                                 () => {
                                     this.fetchAll();
@@ -89,6 +105,14 @@ export class ChangeCouplingView extends React.Component<ChangeCouplingViewProps,
                     onValueClick={(rowIndex, column) => {
                         switch (column) {
                             case "left_name":
+                                let newFileName = changeCoupling[rowIndex][column];
+                                if (this.state.selectedFileName == newFileName) {
+                                    this.showSelectedFileModal.current.show(newFileName);
+                                } else {
+                                    this.fetchForFile(newFileName);
+                                }
+
+                                break;
                             case "right_name":
                                 this.fetchForFile(changeCoupling[rowIndex][column]);
                                 break;
@@ -123,6 +147,7 @@ export class ChangeCouplingView extends React.Component<ChangeCouplingViewProps,
         axios.get(`/api/${this.entryTypeName()}/change-coupling?name=${fileName}`)
             .then(response => {
                 this.setState({
+                    selectedFileName: fileName,
                     specificChangeCoupling: response.data
                 });
             })

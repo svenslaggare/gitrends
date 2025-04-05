@@ -1,7 +1,8 @@
 import React from "react";
 
-import {FileHistory} from "./model";
+import {ChangeCoupling, fetchFileHistory, FileHistory} from "./model";
 import {CodeComplexityTimeChart} from "./charts";
+import {OnError} from "./helpers";
 
 export enum EntryType {
     File,
@@ -130,6 +131,54 @@ export function SelectedFileModal({ name, selectedFile }: { name: string; select
             {renderContent()}
         </div>
     );
+}
+
+interface ShowSelectedFileModalProps {
+    onError: OnError;
+}
+
+interface ShowSelectedFileModalState {
+    fileHistory: FileHistory
+}
+
+export class ShowSelectedFileModal extends React.Component<ShowSelectedFileModalProps, ShowSelectedFileModalState> {
+    private modal: any = null;
+
+    constructor(props) {
+        super(props);
+
+        this.state = {
+            fileHistory: null
+        };
+    }
+
+    render() {
+        return <SelectedFileModal name="selectedFileModal" selectedFile={this.state.fileHistory} />;
+    }
+
+    show(fileName: string) {
+        fetchFileHistory(
+            fileName,
+            fileHistory => {
+                this.setState({
+                    fileHistory: fileHistory
+                });
+
+                // @ts-ignore
+                this.modal = new bootstrap.Modal(document.getElementById("showFileModal"));
+                this.modal.show();
+            },
+            error => {
+                this.props.onError(error);
+            }
+        );
+    }
+
+    clear() {
+        this.setState({
+            fileHistory: null
+        });
+    }
 }
 
 export function AlertBox({ className, message, onClose }: { className: string; message: string; onClose: () => void }) {

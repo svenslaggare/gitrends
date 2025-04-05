@@ -3,7 +3,7 @@ import React, {useRef} from "react";
 import * as d3 from "d3";
 import axios from "axios";
 
-import {OnError} from "../helpers";
+import {OnError} from "../helpers/misc";
 
 interface ChangeCouplingStructureViewProps {
     onError: OnError;

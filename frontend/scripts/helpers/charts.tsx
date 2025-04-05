@@ -3,7 +3,7 @@ import Moment from "react-moment";
 
 import * as d3 from "d3";
 
-import {FileHistoryEntry} from "./model";
+import {FileHistoryEntry} from "../model";
 
 export function CodeComplexityTimeChart({ data }: { data: FileHistoryEntry[] }) {
     let width = 1300;

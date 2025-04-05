@@ -3,8 +3,8 @@ import React, {useState} from "react";
 import * as d3 from "d3";
 import axios from "axios";
 
-import {ShowSelectedFileModal} from "../viewHelpers";
-import {OnError} from "../helpers";
+import {OnError} from "../helpers/misc";
+import {ShowSelectedFileModal} from "../helpers/selectedFileModal";
 
 interface HotspotStructureViewProps {
     onError: OnError;

@@ -2,8 +2,9 @@ import React from "react";
 import axios from "axios";
 
 import {ChangeCoupling} from "../model";
-import {EntryType, EntryTypeSwitcher, ShowSelectedFileModal, Table} from "../viewHelpers";
-import {OnError} from "../helpers";
+import {EntryType, EntryTypeSwitcher, Table} from "../helpers/view";
+import {OnError} from "../helpers/misc";
+import {ShowSelectedFileModal} from "../helpers/selectedFileModal";
 
 interface ChangeCouplingViewProps {
     initialEntryType: EntryType

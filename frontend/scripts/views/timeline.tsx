@@ -3,8 +3,8 @@ import axios from "axios";
 import Moment from "react-moment";
 
 import {GitLogEntry} from "../model";
-import {AlertBox, Conditional} from "../viewHelpers";
-import {OnError} from "../helpers";
+import {AlertBox, Conditional} from "../helpers/view";
+import {OnError} from "../helpers/misc";
 
 interface TimelineViewProps {
     onError: OnError;

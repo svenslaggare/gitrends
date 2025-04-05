@@ -12,8 +12,8 @@ import {
 import {ChangeCouplingView} from "./views/changeCoupling";
 import {HotspotView} from "./views/hotspot";
 import {HotspotStructureView} from "./views/hotspotStructure";
-import {AlertBox, EntryType} from "./viewHelpers";
-import {getErrorMessage} from "./helpers";
+import {AlertBox, EntryType} from "./helpers/view";
+import {getErrorMessage} from "./helpers/misc";
 import {TimelineView} from "./views/timeline";
 import {ChangeCouplingStructureView} from "./views/changeCouplingStructure";
 

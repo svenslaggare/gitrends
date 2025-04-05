@@ -3,8 +3,9 @@ import React from "react";
 import axios from "axios";
 
 import {Hotspot} from "../model";
-import {EntryType, EntryTypeSwitcher, ShowSelectedFileModal, Table} from "../viewHelpers";
-import {capitalize, OnError} from "../helpers";
+import {EntryType, EntryTypeSwitcher, Table} from "../helpers/view";
+import {capitalize, OnError} from "../helpers/misc";
+import {ShowSelectedFileModal} from "../helpers/selectedFileModal";
 
 interface HotspotViewProps {
     initialEntryType: EntryType;

@@ -98,7 +98,7 @@ export class ChangeCouplingView extends React.Component<ChangeCouplingViewProps,
                             case "average_revisions":
                                 return averageRevisions;
                             case "coupling_ratio":
-                                return (100.0 * (row.coupled_revisions / averageRevisions)).toFixed(1);
+                                return Math.round((100.0 * (row.coupled_revisions / averageRevisions)) * 10.0) / 10.0;
                             default:
                                 return row[name];
                         }

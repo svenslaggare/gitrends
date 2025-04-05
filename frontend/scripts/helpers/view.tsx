@@ -147,7 +147,7 @@ export class Table extends React.Component<TableProps, TableState> {
             }
         }
 
-        return value1 - value2;
+        return Math.round(value1 - value2);
     }
 }
 

@@ -16,6 +16,7 @@ import {AlertBox, EntryType} from "./helpers/view";
 import {getErrorMessage} from "./helpers/misc";
 import {TimelineView} from "./views/timeline";
 import {ChangeCouplingStructureView} from "./views/changeCouplingStructure";
+import {ModulesView} from "./views/modules";
 
 interface ApplicationMainProps {
 
@@ -99,14 +100,31 @@ class ApplicationMain extends React.Component<ApplicationMainProps, ApplicationM
                     </div>
                     <div className="offcanvas-body d-md-flex flex-column p-0 pt-lg-3 overflow-y-auto">
                         <ul className="nav flex-column">
-                            <RenderDualLink
-                                to1={"/hotspots"}
-                                to2={"/hotspots-structure"}
-                                secondaryLink={<i className="fa-solid fa-sitemap"/>}
-                            >
-                                <i className="fa-solid fa-fire"/>
-                                Hotspots
-                            </RenderDualLink>
+                            <li className="nav-item">
+                                <RenderLink to="/timeline">
+                                    <i className="fa-solid fa-timeline" />
+                                    Timeline
+                                </RenderLink>
+                            </li>
+
+                            <li className="nav-item">
+                                <RenderLink to="/modules">
+                                    <i className="fa-solid fa-folder" />
+                                    Modules
+                                </RenderLink>
+                            </li>
+
+                            <li className="nav-item">
+                                <RenderDualLink
+                                    to1={"/hotspots"}
+                                    to2={"/hotspots-structure"}
+                                    secondaryLink={<i className="fa-solid fa-sitemap"/>}
+                                >
+                                    <i className="fa-solid fa-fire"/>
+                                    Hotspots
+                                </RenderDualLink>
+                            </li>
+
                             <li className="nav-item">
                                 <RenderDualLink
                                     to1={"/change-coupling"}
@@ -116,12 +134,6 @@ class ApplicationMain extends React.Component<ApplicationMainProps, ApplicationM
                                     <i className="fa-solid fa-link"/>
                                     Change coupling
                                 </RenderDualLink>
-                            </li>
-                            <li className="nav-item">
-                                <RenderLink to="/timeline">
-                                    <i className="fa-solid fa-timeline" />
-                                    Timeline
-                                </RenderLink>
                             </li>
                         </ul>
 
@@ -150,6 +162,12 @@ class ApplicationMain extends React.Component<ApplicationMainProps, ApplicationM
                 />
 
                 <Switch>
+                    <Route path="/timeline">
+                        <TimelineView onError={error => { this.setError(error); }} />
+                    </Route>
+                    <Route path="/modules">
+                        <ModulesView onError={error => { this.setError(error); }} />
+                    </Route>
                     <Route path="/hotspots-structure">
                         <HotspotStructureView onError={error => { this.setError(error); }} />
                     </Route>
@@ -161,9 +179,6 @@ class ApplicationMain extends React.Component<ApplicationMainProps, ApplicationM
                     </Route>
                     <Route path="/change-coupling-structure">
                         <RenderChangeCouplingStructureView self={this} />
-                    </Route>
-                    <Route path="/timeline">
-                        <TimelineView onError={error => { this.setError(error); }} />
                     </Route>
                     <Route path="/">
                         <HotspotStructureView onError={error => { this.setError(error); }} />

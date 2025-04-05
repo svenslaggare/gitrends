@@ -6,6 +6,19 @@ use serde::Serialize;
 use crate::querying::printing::{TablePrinter, TablePrinting};
 
 #[derive(Debug, Serialize)]
+pub struct Module {
+    pub name: String,
+    pub files: Vec<ModuleFile>
+}
+
+#[derive(Debug, Serialize)]
+pub struct ModuleFile {
+    pub file_name: String,
+    pub num_code_lines: u64,
+    pub total_indent_levels: u64
+}
+
+#[derive(Debug, Serialize)]
 pub struct Hotspot {
     pub name: String,
     pub num_revisions: u64,
@@ -402,9 +415,7 @@ impl RawChangeCouplingTree {
             name2: &str,
             change_coupling: &ChangeCoupling
         ) {
-            let mut current = root;
-
-            match current {
+            match root {
                 RawChangeCouplingTree::Tree { children, .. } => {
                     let entry = children.entry(name1.to_owned()).or_insert_with(|| {
                         RawChangeCouplingTree::Leaf {
@@ -422,8 +433,6 @@ impl RawChangeCouplingTree {
                             }
                         );
                     }
-
-                    current = entry;
                 }
                 RawChangeCouplingTree::Leaf { .. } => {}
             }

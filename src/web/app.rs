@@ -65,6 +65,7 @@ pub async fn main(config: WebAppConfig) {
         .route("/api/file/change-coupling-structure", get(get_file_change_coupling_structure))
         .route("/api/file/history/{*file_name}", get(get_file_history))
 
+        .route("/api/module", get(get_modules))
         .route("/api/module/hotspots", get(get_module_hotspots))
         .route("/api/module/change-coupling", get(get_module_change_coupling))
         .route("/api/module/change-coupling-structure", get(get_module_change_coupling_structure))
@@ -225,6 +226,14 @@ async fn get_file_history(
     let repository_querying = state.repository_querying.load();
 
     Ok(Json(repository_querying.file_history(&file_name).await?))
+}
+
+async fn get_modules(
+    State(state): State<Arc<WebAppState>>
+) -> WebAppResult<impl IntoResponse> {
+    let repository_querying = state.repository_querying.load();
+
+    Ok(Json(repository_querying.modules().await?))
 }
 
 async fn get_module_hotspots(

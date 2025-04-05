@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap};
 use std::path::Path;
 use std::sync::Arc;
 
@@ -15,7 +15,7 @@ use datafusion::prelude::*;
 
 use crate::indexing::indexer::GitLogEntry;
 use crate::querying::extras::{IgnoreFile, ModuleDefinitionError, ModuleDefinitions};
-use crate::querying::model::{ChangeCoupling, FileHistoryEntry, Hotspot};
+use crate::querying::model::{ChangeCoupling, FileHistoryEntry, Hotspot, Module, ModuleFile};
 
 #[derive(Debug, Error)]
 pub enum QueryingError {
@@ -270,6 +270,39 @@ impl RepositoryQuerying {
         );
 
         Ok(entries)
+    }
+
+    pub async fn modules(&self) -> Result<Vec<Module>, QueryingError> {
+        let result_df = self.ctx.sql(
+            r#"
+            SELECT
+                extract_module_name(file_name) as module_name,
+                file_name,
+                num_code_lines,
+                total_indent_levels
+            FROM latest_revision_file_entries
+            "#
+        ).await?;
+
+        let mut modules = BTreeMap::new();
+        yield_rows(
+            result_df.collect().await?,
+            4,
+            |columns, row_index| {
+                let module_name = columns[0].as_string_view().value(row_index).to_owned();
+                modules.entry(module_name.clone())
+                    .or_insert_with(|| Module { name: module_name, files: Vec::new() })
+                    .files.push(
+                        ModuleFile {
+                            file_name: columns[1].as_string_view().value(row_index).to_owned(),
+                            num_code_lines: columns[2].as_primitive::<UInt64Type>().value(row_index),
+                            total_indent_levels: columns[3].as_primitive::<UInt64Type>().value(row_index),
+                        }
+                    )
+            }
+        );
+
+        Ok(modules.into_values().collect())
     }
 
     pub async fn hotspots(&self, count: Option<usize>) -> Result<Vec<Hotspot>, QueryingError> {

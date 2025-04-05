@@ -1,5 +1,16 @@
 import axios from "axios";
 
+export interface Module {
+    name: string;
+    files: ModuleFile[];
+}
+
+export interface ModuleFile {
+    file_name: string;
+    num_code_lines: number;
+    total_indent_levels: number;
+}
+
 export interface Hotspot {
     name: string;
     num_revisions: number;

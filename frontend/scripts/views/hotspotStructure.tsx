@@ -26,7 +26,7 @@ export class HotspotStructureView extends React.Component<HotspotStructureViewPr
             selectedFile: null
         }
 
-        this.fetchAll();
+        this.fetchStructure();
     }
 
     render() {
@@ -80,7 +80,7 @@ export class HotspotStructureView extends React.Component<HotspotStructureViewPr
         );
     }
 
-    fetchAll() {
+    fetchStructure() {
         axios.get(`/api/file/hotspots-structure`)
             .then(response => {
                 this.setState({

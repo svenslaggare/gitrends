@@ -15,6 +15,7 @@ import {HotspotStructureView} from "./views/hotspotStructure";
 import {AlertBox, EntryType} from "./viewHelpers";
 import {getErrorMessage} from "./helpers";
 import {TimelineView} from "./views/timeline";
+import {ChangeCouplingStructureView} from "./views/changeCouplingStructure";
 
 interface ApplicationMainProps {
 
@@ -98,23 +99,23 @@ class ApplicationMain extends React.Component<ApplicationMainProps, ApplicationM
                     </div>
                     <div className="offcanvas-body d-md-flex flex-column p-0 pt-lg-3 overflow-y-auto">
                         <ul className="nav flex-column">
+                            <RenderDualLink
+                                to1={"/hotspots"}
+                                to2={"/hotspots-structure"}
+                                secondaryLink={<i className="fa-solid fa-sitemap"/>}
+                            >
+                                <i className="fa-solid fa-fire"/>
+                                Hotspots
+                            </RenderDualLink>
                             <li className="nav-item">
-                                <RenderLink to="/hotspots-structure">
-                                    <i className="fa-solid fa-sitemap" />
-                                    Hotspots structure
-                                </RenderLink>
-                            </li>
-                            <li className="nav-item">
-                                <RenderLink to="/hotspots">
-                                    <i className="fa-solid fa-fire" />
-                                    Hotspots
-                                </RenderLink>
-                            </li>
-                            <li className="nav-item">
-                                <RenderLink to="/change-coupling">
-                                    <i className="fa-solid fa-link" />
+                                <RenderDualLink
+                                    to1={"/change-coupling"}
+                                    to2={"/change-coupling-structure"}
+                                    secondaryLink={<i className="fa-solid fa-sitemap"/>}
+                                >
+                                    <i className="fa-solid fa-link"/>
                                     Change coupling
-                                </RenderLink>
+                                </RenderDualLink>
                             </li>
                             <li className="nav-item">
                                 <RenderLink to="/timeline">
@@ -157,6 +158,9 @@ class ApplicationMain extends React.Component<ApplicationMainProps, ApplicationM
                     </Route>
                     <Route path="/change-coupling">
                         <RenderChangeCouplingView self={this} />
+                    </Route>
+                    <Route path="/change-coupling-structure">
+                        <ChangeCouplingStructureView onError={error => { this.setError(error); }} />
                     </Route>
                     <Route path="/timeline">
                         <TimelineView onError={error => { this.setError(error); }} />
@@ -218,7 +222,9 @@ function ScrollToTop() {
     return null;
 }
 
-function RenderLink({ to, children }: { to: string; children: (string | JSX.Element)[] }) {
+type Children = (string | JSX.Element)[];
+
+function RenderLink({ to, children }: { to: string; children: Children }) {
     const { pathname } = useLocation();
 
     return (
@@ -228,7 +234,24 @@ function RenderLink({ to, children }: { to: string; children: (string | JSX.Elem
     );
 }
 
+function RenderDualLink({ to1, to2, children, secondaryLink }: { to1: string; to2: string; children: Children, secondaryLink: JSX.Element }) {
+    const { pathname } = useLocation();
+    const selectedColor = "#2470dc";
+
+    return (
+        <span className={`nav-link d-flex align-items-center gap-2`} >
+            <Link
+                to={to1} style={{ textDecoration: "none", color: (to1 == pathname || to2 == pathname) ? selectedColor : null }}
+                className="d-flex align-items-center gap-2"
+            >
+                {children}
+            </Link>
+            <Link to={to2} style={{ color: to2 == pathname ? selectedColor : null }}>{secondaryLink}</Link>
+        </span>
+    );
+}
+
 ReactDOM.render(
-    <ApplicationMain />,
+    <ApplicationMain/>,
     document.getElementById("root")
 );

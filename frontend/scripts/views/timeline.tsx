@@ -146,6 +146,10 @@ export class TimelineView extends React.Component<TimelineViewProps, TimelineVie
     }
 
     findClosestCommit(date: number): GitLogEntry {
+        if (date == null) {
+            return null;
+        }
+
         let bestCommit = null;
         let bestTimeDiff = 10000000000000;
         for (let commit of this.state.gitLog) {

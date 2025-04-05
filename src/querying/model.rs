@@ -1,6 +1,7 @@
 use std::collections::HashMap;
-use serde::Serialize;
 use std::fmt::{Display, Formatter};
+
+use serde::Serialize;
 
 use crate::querying::printing::{TablePrinter, TablePrinting};
 
@@ -209,7 +210,10 @@ impl RawHotspotTree {
     pub fn from_vec(hotspots: &Vec<Hotspot>) -> RawHotspotTree {
         let max_num_revisions = hotspots.iter().map(|hotspot| hotspot.num_revisions).max().unwrap_or(0);
 
-        let mut root = RawHotspotTree::Tree { name: "root".to_string(), children: HashMap::new() };
+        let mut root = RawHotspotTree::Tree {
+            name: "root".to_string(),
+            children: HashMap::new()
+        };
 
         for hotspot in hotspots {
             let mut current = &mut root;
@@ -240,6 +244,150 @@ impl RawHotspotTree {
                     RawHotspotTree::Leaf { .. } => {}
                 }
             }
+        }
+
+        root
+    }
+}
+
+#[derive(Debug, Serialize)]
+#[serde(tag="type")]
+pub enum ChangeCouplingTree {
+    Tree {
+        name: String,
+        children: Vec<ChangeCouplingTree>
+    },
+    Leaf {
+        name: String,
+        couplings: Vec<Coupling>
+    }
+}
+
+impl ChangeCouplingTree {
+    pub fn from_vec(
+        change_couplings: &Vec<ChangeCoupling>,
+        min_coupled_revisions: u64,
+        min_coupling_ratio: f64
+    ) -> ChangeCouplingTree {
+        ChangeCouplingTree::from_raw(
+            RawChangeCouplingTree::from_vec(change_couplings),
+            min_coupled_revisions,
+            min_coupling_ratio
+        )
+    }
+
+    fn from_raw(
+        root: RawChangeCouplingTree,
+        min_coupled_revisions: u64,
+        min_coupling_ratio: f64
+    ) -> ChangeCouplingTree {
+        match root {
+            RawChangeCouplingTree::Tree { name, children } => {
+                let mut children = children
+                    .into_values()
+                    .map(|value| ChangeCouplingTree::from_raw(value, min_coupled_revisions, min_coupling_ratio))
+                    .collect::<Vec<_>>();
+
+                children.sort_by_key(|child| child.name().to_owned());
+
+                ChangeCouplingTree::Tree {
+                    name,
+                    children
+                }
+            }
+            RawChangeCouplingTree::Leaf { name, couplings } => {
+                ChangeCouplingTree::Leaf {
+                    name,
+                    couplings: couplings
+                        .into_iter()
+                        .filter(|coupling| coupling.coupled_revisions >= min_coupled_revisions && coupling.coupling_ratio >= min_coupling_ratio)
+                        .collect()
+                }
+            }
+        }
+    }
+}
+
+impl ChangeCouplingTree {
+    pub fn name(&self) -> &str {
+        match self {
+            ChangeCouplingTree::Tree { name, .. } => &name,
+            ChangeCouplingTree::Leaf { name, .. } => &name
+        }
+    }
+}
+
+#[derive(Debug, Serialize)]
+pub struct Coupling {
+    pub coupled: String,
+    pub coupled_revisions: u64,
+    pub coupling_ratio: f64
+}
+
+enum RawChangeCouplingTree {
+    Tree {
+        name: String,
+        children: HashMap<String, RawChangeCouplingTree>
+    },
+    Leaf {
+        name: String,
+        couplings: Vec<Coupling>
+    }
+}
+
+impl RawChangeCouplingTree {
+    pub fn from_vec(change_coupling: &Vec<ChangeCoupling>) -> RawChangeCouplingTree {
+        let mut root = RawChangeCouplingTree::Tree {
+            name: String::new(),
+            children: HashMap::new()
+        };
+
+        fn update_coupling(root: &mut RawChangeCouplingTree,
+                           name1: &str,
+                           name2: &str,
+                           change_coupling: &ChangeCoupling) {
+            let mut current = root;
+
+            let path = std::path::Path::new(&name1);
+            let path_parts = path.iter().collect::<Vec<_>>();
+
+            for (part_index, part) in path_parts.iter().enumerate() {
+                let part_str = part.to_str().unwrap().to_owned();
+                let is_last = part_index == path_parts.len() - 1;
+
+                match current {
+                    RawChangeCouplingTree::Tree { children, .. } => {
+                        let entry = children.entry(part_str.clone()).or_insert_with(|| {
+                            if is_last {
+                                RawChangeCouplingTree::Leaf {
+                                    name: part_str,
+                                    couplings: Vec::new()
+                                }
+                            } else {
+                                RawChangeCouplingTree::Tree { name: part_str, children: HashMap::new() }
+                            }
+                        });
+
+                        if let RawChangeCouplingTree::Leaf { couplings: coupling, .. } = entry {
+                            coupling.push(
+                                Coupling {
+                                    coupled: name2.to_owned(),
+                                    coupled_revisions: change_coupling.coupled_revisions,
+                                    coupling_ratio: change_coupling.coupling_ratio()
+                                }
+                            );
+                        }
+
+                        current = entry;
+                    }
+                    RawChangeCouplingTree::Leaf { .. } => {}
+                }
+            }
+        }
+
+        for change_coupling in change_coupling {
+            update_coupling(&mut root, &change_coupling.left_name, &change_coupling.right_name, change_coupling);
+            update_coupling(&mut root, &change_coupling.right_name, &change_coupling.left_name, change_coupling);
         }
 
         root

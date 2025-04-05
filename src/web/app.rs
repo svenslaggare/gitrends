@@ -21,7 +21,7 @@ use tower_http::services::ServeDir;
 
 use crate::indexing::indexer;
 use crate::querying::engine::{RepositoryQuerying, RepositoryQueryingConfig};
-use crate::querying::model::{HotspotTree};
+use crate::querying::model::{ChangeCouplingTree, HotspotTree};
 use crate::web::{WebAppError, WebAppResult};
 
 #[derive(Clone, Deserialize)]
@@ -62,6 +62,7 @@ pub async fn main(config: WebAppConfig) {
         .route("/api/file/hotspots", get(get_file_hotspots))
         .route("/api/file/hotspots-structure", get(get_file_hotspots_structure))
         .route("/api/file/change-coupling", get(get_file_change_coupling))
+        .route("/api/file/change-coupling-structure", get(get_file_change_coupling_structure))
         .route("/api/file/history/{*file_name}", get(get_file_history))
 
         .route("/api/module/hotspots", get(get_module_hotspots))
@@ -127,7 +128,7 @@ struct ValidDate {
 async fn get_valid_date(
     State(state): State<Arc<WebAppState>>
 )  -> WebAppResult<impl IntoResponse> {
-    let mut persistent_state = state.persistent_state.lock().await;
+    let persistent_state = state.persistent_state.lock().await;
     Ok(
         Json(
             ValidDate {
@@ -204,6 +205,16 @@ async fn get_file_change_coupling(
             Ok(Json(repository_querying.change_couplings(count.or(Some(100))).await?))
         }
     }
+}
+
+async fn get_file_change_coupling_structure(
+    State(state): State<Arc<WebAppState>>
+) -> WebAppResult<impl IntoResponse> {
+    let repository_querying = state.repository_querying.load();
+
+    let change_couplings = repository_querying.change_couplings(None).await?;
+    let change_coupling_tree = ChangeCouplingTree::from_vec(&change_couplings, 15, 0.2);
+    Ok(Json(change_coupling_tree))
 }
 
 async fn get_file_history(

@@ -5,6 +5,7 @@ import Moment from "react-moment";
 import {GitLogEntry} from "../model";
 import {AlertBox, Conditional} from "../helpers/view";
 import {OnError} from "../helpers/misc";
+import humanizeDuration from "humanize-duration";
 
 interface TimelineViewProps {
     onError: OnError;
@@ -75,15 +76,26 @@ export class TimelineView extends React.Component<TimelineViewProps, TimelineVie
             return null;
         }
 
+        let minDate = this.state.gitLog[0].date;
+        let maxDate = this.state.gitLog[this.state.gitLog.length - 1].date;
+
         return (
             <div>
+                <div className="d-flex justify-content-center">
+                    <b>Time period: {humanizeDuration((this.state.maxCommit?.date - this.state.minCommit?.date) * 1000.0)}</b>
+                </div>
+
                 <input
                     type="range" className="form-range" id="minDate" title="The minimum date"
-                    min={this.state.gitLog[0].date}
-                    max={this.state.gitLog[this.state.gitLog.length - 1].date}
+                    min={minDate}
+                    max={maxDate}
                     value={this.state.seekMinDate}
                     onChange={event => {
                         let date = parseInt(event.target.value);
+                        if (this.state.maxCommit != null) {
+                            date = Math.min(date, this.state.maxCommit.date);
+                        }
+
                         this.setState({
                             seekMinDate: date,
                             minCommit: this.findClosestCommit(date)
@@ -93,11 +105,15 @@ export class TimelineView extends React.Component<TimelineViewProps, TimelineVie
 
                 <input
                     type="range" className="form-range" id="maxDate" title="The maximum date"
-                    min={this.state.gitLog[0].date}
-                    max={this.state.gitLog[this.state.gitLog.length - 1].date}
+                    min={minDate}
+                    max={maxDate}
                     value={this.state.seekMaxDate}
                     onChange={event => {
                         let date = parseInt(event.target.value);
+                        if (this.state.minCommit != null) {
+                            date = Math.max(date, this.state.minCommit.date);
+                        }
+
                         this.setState({
                             seekMaxDate: date,
                             maxCommit: this.findClosestCommit(date)

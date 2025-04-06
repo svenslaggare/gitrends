@@ -63,6 +63,7 @@ export interface Module {
 export interface Hotspot {
     name: string;
     num_revisions: number;
+    num_authors: number;
     num_code_lines: number;
     total_indent_levels: number;
 }

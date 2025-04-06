@@ -91,8 +91,10 @@ impl RepositoryQuerying {
             CREATE VIEW num_module_revisions AS
             SELECT
                 extract_module_name(file_name) AS module_name,
-                COUNT(DISTINCT revision) AS num_revisions
+                COUNT(DISTINCT git_file_entries.revision) AS num_revisions,
+                COUNT(DISTINCT normalize_author(git_log.author)) AS num_authors
             FROM git_file_entries
+            INNER JOIN git_log ON git_log.revision = git_file_entries.revision
             GROUP BY extract_module_name(file_name)
             "#
         ).await?;
@@ -132,10 +134,12 @@ impl RepositoryQuerying {
             CREATE VIEW hotspots AS
             SELECT
                 file_name,
-                COUNT(revision) AS num_revisions,
-                last_value(num_code_lines ORDER BY date) AS num_code_lines,
-                last_value(total_indent_levels ORDER BY date) AS total_indent_levels
+                COUNT(git_file_entries.revision) AS num_revisions,
+                COUNT(DISTINCT normalize_author(author)) AS num_authors,
+                last_value(num_code_lines ORDER BY git_file_entries.date) AS num_code_lines,
+                last_value(total_indent_levels ORDER BY git_file_entries.date) AS total_indent_levels
             FROM git_file_entries
+            INNER JOIN git_log ON git_log.revision = git_file_entries.revision
             GROUP BY file_name
             "#
         ).await?;
@@ -146,11 +150,11 @@ impl RepositoryQuerying {
             SELECT
                 latest_revision_module_entries.module_name,
                 num_module_revisions.num_revisions,
+                num_module_revisions.num_authors,
                 num_code_lines,
                 total_indent_levels
             FROM latest_revision_module_entries
-            INNER JOIN
-                num_module_revisions
+            INNER JOIN num_module_revisions
                 ON num_module_revisions.module_name = latest_revision_module_entries.module_name
             ORDER BY num_code_lines DESC
             "#
@@ -434,14 +438,15 @@ impl RepositoryQuerying {
         let mut hotspots = Vec::new();
         yield_rows(
             result_df.collect().await?,
-            4,
+            5,
             |columns, row_index| {
                 hotspots.push(
                     Hotspot {
                         name: columns[0].as_string_view().value(row_index).to_owned(),
                         num_revisions: columns[1].as_primitive::<Int64Type>().value(row_index) as u64,
-                        num_code_lines: columns[2].as_primitive::<UInt64Type>().value(row_index),
-                        total_indent_levels: columns[3].as_primitive::<UInt64Type>().value(row_index)
+                        num_authors: columns[2].as_primitive::<Int64Type>().value(row_index) as u64,
+                        num_code_lines: columns[3].as_primitive::<UInt64Type>().value(row_index),
+                        total_indent_levels: columns[4].as_primitive::<UInt64Type>().value(row_index)
                     }
                 );
             }

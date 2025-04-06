@@ -14,7 +14,6 @@ interface HotspotViewProps {
 
 interface HotspotViewState {
     entryType: EntryType;
-
     hotspots: Hotspot[];
 }
 
@@ -64,6 +63,7 @@ export class HotspotView extends React.Component<HotspotViewProps, HotspotViewSt
                             clickable: this.state.entryType == EntryType.File
                         },
                         { name: "num_revisions", display: "Number of revisions", clickable: false },
+                        { name: "num_authors", display: "Number of authors", clickable: false },
                         { name: "num_code_lines", display: "Number of code lines", clickable: false },
                         { name: "total_indent_levels", display: "Complexity", clickable: false }
                     ]}

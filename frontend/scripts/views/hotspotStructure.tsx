@@ -5,12 +5,15 @@ import axios from "axios";
 
 import {OnError} from "../helpers/misc";
 import {ShowSelectedFileModal} from "../helpers/selectedFileModal";
+import {HotspotAnalysisType, HotspotAnalysisTypeSwitcher} from "../helpers/view";
 
 interface HotspotStructureViewProps {
+    initialAnalysisType: HotspotAnalysisType;
     onError: OnError;
 }
 
 interface HotspotStructureViewState {
+    analysisType: HotspotAnalysisType;
     hotspotTree: HotspotTree;
 }
 
@@ -21,6 +24,7 @@ export class HotspotStructureView extends React.Component<HotspotStructureViewPr
         super(props);
 
         this.state = {
+            analysisType: this.props.initialAnalysisType ?? HotspotAnalysisType.Revision,
             hotspotTree: null
         }
 
@@ -33,6 +37,15 @@ export class HotspotStructureView extends React.Component<HotspotStructureViewPr
                 <ShowSelectedFileModal ref={this.showSelectedFileModal} onError={this.props.onError} />
 
                 <div className="pt-3 pb-2 mb-3 border-bottom">
+                    <HotspotAnalysisTypeSwitcher
+                        current={this.state.analysisType}
+                        onChange={hotspotAnalysisType => {
+                            this.setState({
+                                analysisType: hotspotAnalysisType
+                            });
+                        }}
+                    />
+
                     <h1 className="h2">Hotspots</h1>
                 </div>
 
@@ -49,6 +62,7 @@ export class HotspotStructureView extends React.Component<HotspotStructureViewPr
         return (
             <div className="flex-center">
                 <StructureChart
+                    analysisType={this.state.analysisType}
                     hotspotTree={this.state.hotspotTree}
                     onFileSelect={(fileName, leaf) => {
                         if (leaf) {
@@ -77,11 +91,18 @@ interface HotspotTree {
     type: string;
     name: string;
     size?: number;
-    weight?: number;
+    revision_weight?: number;
+    author_weight?: number;
     children: HotspotTree[];
 }
 
-function StructureChart({ hotspotTree, onFileSelect }: { hotspotTree: HotspotTree; onFileSelect: (name: string, leaf: boolean) => void; }) {
+interface StructureChartProps {
+    analysisType: HotspotAnalysisType;
+    hotspotTree: HotspotTree;
+    onFileSelect: (name: string, leaf: boolean) => void;
+}
+
+function StructureChart({ analysisType, hotspotTree, onFileSelect }: StructureChartProps) {
     let margin = 10;
     let outerDiameter = 900;
     let innerDiameter = outerDiameter - margin - margin;
@@ -143,6 +164,21 @@ function StructureChart({ hotspotTree, onFileSelect }: { hotspotTree: HotspotTre
         setFocus(focus.data == newFocus.data ? node.parent : newFocus);
     };
 
+    let weight: (node: Node) => number;
+    switch (analysisType) {
+        case HotspotAnalysisType.Revision:
+            weight = (node: Node) => {
+                return node.data?.revision_weight;
+            };
+            break;
+        case HotspotAnalysisType.Author:
+            weight = (node: Node) => {
+                return node.data?.author_weight;
+            };
+            break;
+
+    }
+
     return (
         <svg width={width} height={height}>
             {
@@ -152,8 +188,8 @@ function StructureChart({ hotspotTree, onFileSelect }: { hotspotTree: HotspotTre
                         className={node.parent ? node.children ? "node" : "node node-leaf" : "node node-root"}
                         cx={x(node.x)} cy={y(node.y)}
                         r={node.r * k}
-                        fill={(node.data.weight ?? 0.0) > 0.0 ? "darkred" : node.children ? color(node.depth) : "WhiteSmoke"}
-                        fillOpacity={node.children ? null : node.data.weight}
+                        fill={(weight(node) ?? 0.0) > 0.0 ? "darkred" : node.children ? color(node.depth) : "WhiteSmoke"}
+                        fillOpacity={node.children ? null : weight(node)}
                         onClick={() => {
                             zoom(node);
                         }}

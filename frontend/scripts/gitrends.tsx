@@ -12,7 +12,7 @@ import {
 import {ChangeCouplingView} from "./views/changeCoupling";
 import {HotspotView} from "./views/hotspot";
 import {HotspotStructureView} from "./views/hotspotStructure";
-import {AlertBox, EntryType} from "./helpers/view";
+import {AlertBox, EntryType, HotspotAnalysisType} from "./helpers/view";
 import {getErrorMessage} from "./helpers/misc";
 import {TimelineView} from "./views/timeline";
 import {ChangeCouplingStructureView} from "./views/changeCouplingStructure";
@@ -184,11 +184,11 @@ class ApplicationMain extends React.Component<ApplicationMainProps, ApplicationM
                     <Route path="/modules">
                         <ModulesView onError={error => { this.setError(error); }} />
                     </Route>
-                    <Route path="/hotspots-structure">
-                        <HotspotStructureView onError={error => { this.setError(error); }} />
-                    </Route>
                     <Route path="/hotspots">
                         <RenderHotspotView self={this} />
+                    </Route>
+                    <Route path="/hotspots-structure">
+                        <RenderHotspotStructureView self={this} />
                     </Route>
                     <Route path="/change-coupling">
                         <RenderChangeCouplingView self={this} />
@@ -242,6 +242,15 @@ function RenderHotspotView({ self }: { self: ApplicationMain }) {
     )
 }
 
+function RenderHotspotStructureView({ self }: { self: ApplicationMain }) {
+    return (
+        <HotspotStructureView
+            initialAnalysisType={getHotspotAnalysisType(useLocation().hash)}
+            onError={error => { self.setError(error); }}
+        />
+    )
+}
+
 function RenderChangeCouplingView({ self }: { self: ApplicationMain }) {
     return (
         <ChangeCouplingView
@@ -270,6 +279,22 @@ function getEntryType(hash: string) {
                 return EntryType.File;
             case "module":
                 return EntryType.Module;
+            default:
+                return null;
+        }
+    } else {
+        return null;
+    }
+}
+
+function getHotspotAnalysisType(hash: string) {
+    let hashParts = hash.split("#");
+    if (hashParts.length == 2) {
+        switch (hashParts[1]) {
+            case "revision":
+                return HotspotAnalysisType.Revision;
+            case "author":
+                return HotspotAnalysisType.Author;
             default:
                 return null;
         }

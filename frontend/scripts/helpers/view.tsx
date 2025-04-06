@@ -5,30 +5,78 @@ export enum EntryType {
     Module
 }
 
-export function EntryTypeSwitcher({ current, onChange }: { current: EntryType; onChange: (entry: EntryType) => void; }) {
+export function EntryTypeSwitcher({ current, onChange }: { current: EntryType; onChange: (entryType: EntryType) => void; }) {
     function iconForType(entryType: EntryType) {
         switch (entryType) {
             case EntryType.File:
-                return <i className="fa-solid fa-file"></i>;
+                return <i className="fa-solid fa-file" />;
             case EntryType.Module:
-                return <i className="fa-solid fa-folder"></i>;
+                return <i className="fa-solid fa-folder" />;
         }
     }
 
     return (
-        <div className="dropdown" style={{ float: "right" }}>
-            <button className="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+        <div className="dropdown switcher-dropdown">
+            <DropdownButton>
                 {iconForType(current)}
-            </button>
+            </DropdownButton>
             <ul className="dropdown-menu">
                 <li>
-                    <a className="dropdown-item" href="#file" onClick={() => { onChange(EntryType.File) }}>{iconForType(EntryType.File)} File</a>
+                    <a className="dropdown-item" href="#file" onClick={() => { onChange(EntryType.File) }}>
+                        {iconForType(EntryType.File)} File
+                    </a>
                 </li>
                 <li>
-                    <a className="dropdown-item" href="#module" onClick={() => { onChange(EntryType.Module) }}>{iconForType(EntryType.Module)} Module</a>
+                    <a className="dropdown-item" href="#module" onClick={() => { onChange(EntryType.Module) }}>
+                        {iconForType(EntryType.Module)} Module
+                    </a>
                 </li>
             </ul>
         </div>
+    );
+}
+
+export enum HotspotAnalysisType {
+    Revision,
+    Author
+}
+
+export function HotspotAnalysisTypeSwitcher({ current, onChange }: { current: HotspotAnalysisType; onChange: (analysisType: HotspotAnalysisType) => void; }) {
+    function iconForType(analysisType: HotspotAnalysisType) {
+        switch (analysisType) {
+            case HotspotAnalysisType.Revision:
+                return <i className="fa-solid fa-code-commit" />;
+            case HotspotAnalysisType.Author:
+                return <i className="fa-regular fa-user" />;
+        }
+    }
+
+    return (
+        <div className="dropdown switcher-dropdown">
+            <DropdownButton>
+                {iconForType(current)}
+            </DropdownButton>
+            <ul className="dropdown-menu">
+                <li>
+                    <a className="dropdown-item" href="#revision" onClick={() => { onChange(HotspotAnalysisType.Revision) }}>
+                        {iconForType(HotspotAnalysisType.Revision)} Revision
+                    </a>
+                </li>
+                <li>
+                    <a className="dropdown-item" href="#author" onClick={() => { onChange(HotspotAnalysisType.Author) }}>
+                        {iconForType(HotspotAnalysisType.Author)} Author
+                    </a>
+                </li>
+            </ul>
+        </div>
+    );
+}
+
+function DropdownButton({ children }: { children: JSX.Element}) {
+    return (
+        <button className="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+            {children}
+        </button>
     );
 }
 

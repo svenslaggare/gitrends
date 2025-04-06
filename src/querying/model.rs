@@ -96,6 +96,7 @@ impl TablePrinting for FileHistoryEntry {
 pub struct Hotspot {
     pub name: String,
     pub num_revisions: u64,
+    pub num_authors: u64,
     pub num_code_lines: u64,
     pub total_indent_levels: u64
 }
@@ -104,9 +105,10 @@ impl Display for Hotspot {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
-            "{} - revisions: {}, code lines: {}, total indent level: {}",
+            "{} - revisions: {}, authors: {}, code lines: {}, total indent level: {}",
             self.name,
             self.num_revisions,
+            self.num_authors,
             self.num_code_lines,
             self.total_indent_levels
         )
@@ -118,6 +120,7 @@ impl TablePrinting for Hotspot {
         vec![
             "name".to_string(),
             "num_revisions".to_string(),
+            "num_authors".to_string(),
             "num_code_lines".to_string(),
             "total_indent_levels".to_string()
         ]
@@ -127,6 +130,7 @@ impl TablePrinting for Hotspot {
         table_printer.add_row(vec![
             self.name.clone(),
             self.num_revisions.to_string(),
+            self.num_authors.to_string(),
             self.num_code_lines.to_string(),
             self.total_indent_levels.to_string()
         ]);
@@ -199,7 +203,8 @@ pub enum HotspotTree {
     Leaf {
         name: String,
         size: u64,
-        weight: f64
+        revision_weight: f64,
+        author_weight: f64
     }
 }
 
@@ -223,8 +228,8 @@ impl HotspotTree {
                     children,
                 }
             }
-            RawHotspotTree::Leaf { name, size, weight } => {
-                HotspotTree::Leaf { name, size, weight }
+            RawHotspotTree::Leaf { name, size, revision_weight, author_weight } => {
+                HotspotTree::Leaf { name, size, revision_weight, author_weight }
             }
         }
     }
@@ -247,13 +252,15 @@ enum RawHotspotTree {
     Leaf {
         name: String,
         size: u64,
-        weight: f64
+        revision_weight: f64,
+        author_weight: f64
     }
 }
 
 impl RawHotspotTree {
     pub fn from_vec(hotspots: &Vec<Hotspot>) -> RawHotspotTree {
         let max_num_revisions = hotspots.iter().map(|hotspot| hotspot.num_revisions).max().unwrap_or(0);
+        let max_num_authors = hotspots.iter().map(|hotspot| hotspot.num_authors).max().unwrap_or(0);
 
         let mut root = RawHotspotTree::Tree {
             name: "root".to_string(),
@@ -277,7 +284,8 @@ impl RawHotspotTree {
                                 RawHotspotTree::Leaf {
                                     name: part_str,
                                     size: hotspot.num_code_lines,
-                                    weight: hotspot.num_revisions as f64 / max_num_revisions as f64,
+                                    revision_weight: hotspot.num_revisions as f64 / max_num_revisions as f64,
+                                    author_weight: hotspot.num_authors as f64 / max_num_authors as f64,
                                 }
                             } else {
                                 RawHotspotTree::Tree { name: part_str, children: HashMap::new() }

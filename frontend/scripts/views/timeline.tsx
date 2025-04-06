@@ -12,7 +12,8 @@ interface TimelineViewProps {
 
 interface TimelineViewState {
     gitLog: GitLogEntry[];
-    seekDate: number;
+    seekMinDate: number;
+    seekMaxDate: number;
 
     savedMinDate: number;
     savedMaxDate: number;
@@ -29,7 +30,8 @@ export class TimelineView extends React.Component<TimelineViewProps, TimelineVie
 
         this.state = {
             gitLog: [],
-            seekDate: null,
+            seekMinDate: null,
+            seekMaxDate: null,
 
             savedMinDate: null,
             savedMaxDate: null,
@@ -73,74 +75,59 @@ export class TimelineView extends React.Component<TimelineViewProps, TimelineVie
             return null;
         }
 
-        let bestCommit = this.findClosestCommit(this.state.seekDate);
-
         return (
             <div>
-                <Conditional
-                    condition={this.state.minCommit != null}
-                    trueBranch={() =>
-                        <b><Commit commit={this.state.minCommit} /></b>
-                    }
-                    falseBranch={() => null}
-                />
-
-                <Conditional
-                    condition={this.state.maxCommit != null}
-                    trueBranch={() =>
-                        <span> - <b><Commit commit={this.state.maxCommit} /></b></span>
-                    }
-                    falseBranch={() => null}
-                />
-
-                <br />
-                <br />
-
                 <input
-                    type="range" className="form-range" id="minDate"
+                    type="range" className="form-range" id="minDate" title="The minimum date"
                     min={this.state.gitLog[0].date}
                     max={this.state.gitLog[this.state.gitLog.length - 1].date}
-                    defaultValue={this.state.seekDate}
-                    onChange={event => { this.setState({ seekDate: parseInt(event.target.value) }); }}
+                    value={this.state.seekMinDate}
+                    onChange={event => {
+                        let date = parseInt(event.target.value);
+                        this.setState({
+                            seekMinDate: date,
+                            minCommit: this.findClosestCommit(date)
+                        });
+                    }}
                 />
 
-                <b><Commit commit={bestCommit}/></b> <br />
-                <div style={{whiteSpace: "pre-wrap"}}>{bestCommit.commit_message}</div>
+                <input
+                    type="range" className="form-range" id="maxDate" title="The maximum date"
+                    min={this.state.gitLog[0].date}
+                    max={this.state.gitLog[this.state.gitLog.length - 1].date}
+                    value={this.state.seekMaxDate}
+                    onChange={event => {
+                        let date = parseInt(event.target.value);
+                        this.setState({
+                            seekMaxDate: date,
+                            maxCommit: this.findClosestCommit(date)
+                        });
+                    }}
+                />
 
-                <br />
+                <div className="row">
+                    <div className="col col-6">
+                        <h3>Minimum date</h3>
+                        <Commit commit={this.state.minCommit} />
+                    </div>
+                    <div className="col col-6">
+                        <h3>Maximum date</h3>
+                        <Commit commit={this.state.maxCommit} />
+                    </div>
+                </div>
+
+                <br/>
 
                 <div className="d-flex justify-content-center">
                     <button
                         className="btn btn-primary btn-lg"
-                        style={{ margin: "5px" }}
+                        style={{margin: "5px"}}
                         onClick={() => {
-                            this.setState({ minCommit: this.findClosestCommit(this.state.seekDate) });
+                            this.reset();
                         }}
                     >
-                        Set as minimum
+                        Reset
                     </button>
-
-                    <button
-                        className="btn btn-primary btn-lg"
-                        style={{ margin: "5px" }}
-                        onClick={() => {
-                            this.setState({ maxCommit: this.findClosestCommit(this.state.seekDate) });
-                        }}
-                    >
-                        Set as maximum
-                    </button>
-
-                    <button
-                        className="btn btn-primary btn-lg"
-                        style={{ margin: "5px" }}
-                        onClick={() => {
-                            this.setState({ minCommit: null, maxCommit: null });
-                        }}
-                    >
-                        Clear
-                    </button>
-
-                    <br />
                 </div>
             </div>
         );
@@ -170,8 +157,7 @@ export class TimelineView extends React.Component<TimelineViewProps, TimelineVie
                 this.setState(
                     {
                         savedMinDate: response.data.min_date,
-                        savedMaxDate: response.data.max_date,
-                        seekDate: response.data.min_date ?? 0
+                        savedMaxDate: response.data.max_date
                     },
                     () => {
                         this.updateValidCommits();
@@ -190,7 +176,6 @@ export class TimelineView extends React.Component<TimelineViewProps, TimelineVie
                 this.setState(
                     {
                         gitLog: gitLog,
-                        seekDate: this.state.seekDate ?? gitLog[0].date
                     },
                     () => {
                         this.updateValidCommits();
@@ -203,9 +188,42 @@ export class TimelineView extends React.Component<TimelineViewProps, TimelineVie
     }
 
     updateValidCommits() {
+        let savedMinDate = this.state.savedMinDate;
+        if (savedMinDate == null && this.state.gitLog.length > 0) {
+            savedMinDate = this.state.gitLog[0].date;
+        }
+
+        if (savedMinDate == null) {
+            savedMinDate = 0;
+        }
+
+        let savedMaxDate = this.state.savedMaxDate;
+        if (savedMaxDate == null && this.state.gitLog.length > 0) {
+            savedMaxDate = this.state.gitLog[this.state.gitLog.length - 1].date;
+        }
+
+        if (savedMaxDate == null) {
+            savedMinDate = new Date().getTime() / 1000.0;
+        }
+
         this.setState({
-            minCommit: this.findClosestCommit(this.state.savedMinDate),
-            maxCommit: this.findClosestCommit(this.state.savedMaxDate)
+            seekMinDate: savedMinDate,
+            minCommit: this.findClosestCommit(savedMinDate),
+
+            seekMaxDate: savedMaxDate,
+            maxCommit: this.findClosestCommit(savedMaxDate),
+        });
+    }
+
+    reset() {
+        this.setState({
+            seekMinDate: this.state.savedMinDate,
+            minCommit: this.findClosestCommit(this.state.savedMinDate)
+        });
+
+        this.setState({
+            seekMaxDate: this.state.savedMaxDate,
+            minCommit: this.findClosestCommit(this.state.savedMaxDate)
         });
     }
 
@@ -229,8 +247,17 @@ export class TimelineView extends React.Component<TimelineViewProps, TimelineVie
 
 function Commit({ commit }: { commit: GitLogEntry }) {
     return (
-        <span>
-            {commit.revision} by {commit.author} at <Moment format="YYYY-MM-DD HH:mm:ss">{commit.date * 1000.0}</Moment>
-        </span>
+        <Conditional
+            condition={commit != null}
+            trueBranch={() =>
+                <div>
+                    <b>
+                        {commit.revision} by {commit.author} at <Moment format="YYYY-MM-DD HH:mm:ss">{commit.date * 1000.0}</Moment>
+                    </b>
+                    <div style={{whiteSpace: "pre-wrap"}}>{commit.commit_message}</div>
+                </div>
+            }
+            falseBranch={() => null}
+        />
     );
 }

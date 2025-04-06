@@ -14,15 +14,15 @@ use datafusion::logical_expr::{ColumnarValue, Volatility};
 use datafusion::prelude::*;
 
 use crate::indexing::indexer::GitLogEntry;
-use crate::querying::extras::{IgnoreFile, ModuleDefinitionError, ModuleDefinitions};
-use crate::querying::model::{ChangeCoupling, FileHistoryEntry, Hotspot, Module, ModuleFile};
+use crate::querying::extras::{AuthorNormalizer, IgnoreFile, ModuleDefinitionError, ModuleDefinitions};
+use crate::querying::model::{Author, ChangeCoupling, FileEntry, FileHistoryEntry, Hotspot, Module, ModuleFile, RepositorySummary};
 
 #[derive(Debug, Error)]
 pub enum QueryingError {
     #[error("DataFusion: {0}")]
     DataFusion(DataFusionError),
     #[error("Module definition: {0}")]
-    ModuleDefinition(ModuleDefinitionError),
+    ModuleDefinition(ModuleDefinitionError)
 }
 
 impl From<DataFusionError> for QueryingError {
@@ -67,7 +67,7 @@ impl RepositoryQuerying {
         ).await?;
 
         ctx.register_parquet(
-            "all_git_entries",
+            "all_git_file_entries",
             data_directory.join("git_file_entries.parquet").to_str().unwrap(),
             ParquetReadOptions::default()
         ).await?;
@@ -141,13 +141,41 @@ impl RepositoryQuerying {
         );
         ctx.register_udf(extract_module_name.clone());
 
+        let author_normalizer = match std::fs::read_to_string(data_directory.join("authors.txt")) {
+            Ok(definition) => AuthorNormalizer::new(&definition)?,
+            _ => AuthorNormalizer::empty()
+        };
+
+        let normalize_author = create_udf(
+            "normalize_author",
+            vec![DataType::Utf8],
+            DataType::Utf8View,
+            Volatility::Immutable,
+            Arc::new(move |args: &[ColumnarValue]| {
+                let args = ColumnarValue::values_to_arrays(args)?;
+                let author = as_string_array(&args[0]).expect("cast failed");
+
+                let array = author
+                    .iter()
+                    .map(|file_name| {
+                        file_name.map(|author| {
+                            author_normalizer.normalize(author).unwrap_or(author).to_owned()
+                        })
+                    })
+                    .collect::<StringViewArray>();
+
+                Ok(ColumnarValue::from(Arc::new(array) as ArrayRef))
+            })
+        );
+        ctx.register_udf(normalize_author.clone());
+
         ctx.sql(
             &format!(
                 r#"
                 CREATE VIEW git_file_entries AS
                 SELECT
                     *
-                FROM all_git_entries
+                FROM all_git_file_entries
                 WHERE
                     exists_at_head AND NOT is_ignored(file_name) AND date >= {} AND date <= {}
                 "#,
@@ -192,8 +220,14 @@ impl RepositoryQuerying {
             CREATE VIEW latest_revision_file_entries AS
             SELECT
                 file_name,
+
                 last_value(num_code_lines ORDER BY date) AS num_code_lines,
-                last_value(total_indent_levels ORDER BY date) AS total_indent_levels
+                last_value(num_comment_lines ORDER BY date) AS num_comment_lines,
+                last_value(num_blank_lines ORDER BY date) AS num_blank_lines,
+
+                last_value(total_indent_levels ORDER BY date) AS total_indent_levels,
+                last_value(avg_indent_levels ORDER BY date) AS avg_indent_levels,
+                last_value(std_indent_levels ORDER BY date) AS std_indent_levels
             FROM git_file_entries
             GROUP BY file_name
             "#
@@ -243,11 +277,164 @@ impl RepositoryQuerying {
         Ok(RepositoryQuerying { ctx })
     }
 
+    pub async fn summary(&self) -> Result<RepositorySummary, QueryingError> {
+        let mut result = RepositorySummary {
+            num_revisions: 0,
+            first_commit: None,
+            last_commit: None,
+
+            num_code_lines: 0,
+            num_files: 0,
+            num_modules: 0,
+
+            top_authors: Vec::new(),
+
+            top_code_files: Vec::new(),
+            last_changed_files: Vec::new()
+        };
+
+        let result_df = self.ctx.sql("SELECT COUNT(*) FROM git_log").await?;
+        yield_rows(
+            result_df.collect().await?,
+            1,
+            |columns, row_index| {
+                result.num_revisions = columns[0].as_primitive::<Int64Type>().value(row_index) as u64;
+            }
+        );
+
+        let result_df = self.ctx.sql(
+            r#"
+            SELECT
+                FIRST_VALUE(revision ORDER BY date) AS first_revision,
+                FIRST_VALUE(date ORDER BY date) AS first_date,
+                FIRST_VALUE(normalize_author(author) ORDER BY date) AS first_author,
+                FIRST_VALUE(commit_message ORDER BY date) AS first_commit_message,
+
+                LAST_VALUE(revision ORDER BY date) AS last_revision,
+                LAST_VALUE(date ORDER BY date) AS last_date,
+                LAST_VALUE(normalize_author(author) ORDER BY date) AS last_author,
+                LAST_VALUE(commit_message ORDER BY date) AS lastcommit_message
+            FROM git_log
+            "#
+        ).await?;
+
+        yield_rows(
+            result_df.collect().await?,
+            8,
+            |columns, row_index| {
+                result.first_commit = Some(GitLogEntry::from_row(columns, row_index, 0));
+                result.last_commit = Some(GitLogEntry::from_row(columns, row_index, 4));
+            }
+        );
+
+        let result_df = self.ctx.sql(
+            r#"
+            SELECT
+                COUNT(file_name) AS num_files,
+                COUNT(DISTINCT extract_module_name(file_name)) AS num_modules,
+                SUM(num_code_lines) AS num_code_lines
+            FROM latest_revision_file_entries
+            "#
+        ).await?;
+
+        yield_rows(
+            result_df.collect().await?,
+            3,
+            |columns, row_index| {
+                result.num_files = columns[0].as_primitive::<Int64Type>().value(row_index) as u64;
+                result.num_modules = columns[1].as_primitive::<Int64Type>().value(row_index) as u64;
+                result.num_code_lines = columns[2].as_primitive::<UInt64Type>().value(row_index);
+            }
+        );
+
+        let result_df = self.ctx.sql(
+            r#"
+            SELECT
+                normalize_author(author) AS name,
+                COUNT(*) AS num_revisions
+            FROM git_log
+            GROUP BY normalize_author(author)
+            ORDER BY num_revisions DESC LIMIT 10
+            "#
+        ).await?;
+
+        yield_rows(
+            result_df.collect().await?,
+            2,
+            |columns, row_index| {
+                result.top_authors.push(
+                    Author {
+                        name: columns[0].as_string_view().value(row_index).to_owned(),
+                        num_revisions: columns[1].as_primitive::<Int64Type>().value(row_index) as u64
+                    }
+                );
+            }
+        );
+
+        let result_df = self.ctx
+            .sql(
+                r#"
+                SELECT
+                    file_name,
+                    revision,
+                    date,
+
+                    num_code_lines,
+                    num_comment_lines,
+                    num_blank_lines,
+
+                    total_indent_levels,
+                    avg_indent_levels,
+                    std_indent_levels
+                FROM all_git_file_entries
+                ORDER BY date DESC LIMIT 10;
+                "#
+            )
+            .await?;
+
+        yield_rows(
+            result_df.collect().await?,
+            9,
+            |columns, row_index| {
+                result.last_changed_files.push(FileHistoryEntry::from_row(columns, row_index, 0));
+            }
+        );
+
+        let result_df = self.ctx
+            .sql(
+                r#"
+                SELECT
+                    file_name,
+
+                    num_code_lines,
+                    num_comment_lines,
+                    num_blank_lines,
+
+                    total_indent_levels,
+                    avg_indent_levels,
+                    std_indent_levels
+                FROM latest_revision_file_entries
+                ORDER BY num_code_lines DESC LIMIT 10;
+                "#
+            )
+            .await?;
+
+        yield_rows(
+            result_df.collect().await?,
+            7,
+            |columns, row_index| {
+                result.top_code_files.push(FileEntry::from_row(columns, row_index, 0));
+            }
+        );
+
+        Ok(result)
+    }
+
     pub async fn log(&self) -> Result<Vec<GitLogEntry>, QueryingError> {
         let result_df = self.ctx.sql(
             r#"
             SELECT
-                revision, date, author, commit_message
+                revision, date, normalize_author(author), commit_message
             FROM git_log
             ORDER BY date;
             "#
@@ -258,14 +445,7 @@ impl RepositoryQuerying {
             result_df.collect().await?,
             4,
             |columns, row_index| {
-                entries.push(
-                    GitLogEntry {
-                        revision: columns[0].as_string_view().value(row_index).to_owned(),
-                        date: columns[1].as_primitive::<Int64Type>().value(row_index),
-                        author: columns[2].as_string_view().value(row_index).to_owned(),
-                        commit_message: columns[3].as_string_view().value(row_index).to_owned(),
-                    }
-                );
+                entries.push(GitLogEntry::from_row(columns, row_index, 0));
             }
         );
 
@@ -518,6 +698,7 @@ impl RepositoryQuerying {
             .sql(
                 r#"
                 SELECT
+                    file_name,
                     revision,
                     date,
 
@@ -527,7 +708,7 @@ impl RepositoryQuerying {
 
                     total_indent_levels,
                     avg_indent_levels,
-                    std_indent_level
+                    std_indent_levels
                 FROM git_file_entries
                 WHERE file_name = $1
                 ORDER BY date ASC;
@@ -539,22 +720,9 @@ impl RepositoryQuerying {
         let mut entries = Vec::new();
         yield_rows(
             result_df.collect().await?,
-            8,
+            9,
             |columns, row_index| {
-                entries.push(
-                    FileHistoryEntry {
-                        revision: columns[0].as_string_view().value(row_index).to_owned(),
-                        date: columns[1].as_primitive::<Int64Type>().value(row_index),
-
-                        num_code_lines: columns[2].as_primitive::<UInt64Type>().value(row_index),
-                        num_comment_lines: columns[3].as_primitive::<UInt64Type>().value(row_index),
-                        num_blank_lines: columns[4].as_primitive::<UInt64Type>().value(row_index),
-
-                        total_indent_levels: columns[5].as_primitive::<UInt64Type>().value(row_index),
-                        avg_indent_levels: columns[6].as_primitive::<Float64Type>().value(row_index),
-                        std_indent_level: columns[7].as_primitive::<Float64Type>().value(row_index)
-                    }
-                );
+                entries.push(FileHistoryEntry::from_row(columns, row_index, 0));
             }
         );
 
@@ -615,5 +783,50 @@ fn add_optional_limit(result_df: DataFrame, count: Option<usize>) -> Result<Data
     match count {
         Some(count) => result_df.limit(0, Some(count)),
         None => Ok(result_df)
+    }
+}
+
+impl GitLogEntry {
+    pub fn from_row(columns: &[&ArrayRef], row_index: usize, base_column_index: usize) -> GitLogEntry {
+        GitLogEntry {
+            revision: columns[base_column_index].as_string_view().value(row_index).to_owned(),
+            date: columns[base_column_index + 1].as_primitive::<Int64Type>().value(row_index),
+            author: columns[base_column_index + 2].as_string_view().value(row_index).to_owned(),
+            commit_message: columns[base_column_index + 3].as_string_view().value(row_index).to_owned()
+        }
+    }
+}
+
+impl FileEntry {
+    pub fn from_row(columns: &[&ArrayRef], row_index: usize, base_column_index: usize) -> FileEntry {
+        FileEntry {
+            name: columns[base_column_index].as_string_view().value(row_index).to_owned(),
+
+            num_code_lines: columns[base_column_index + 1].as_primitive::<UInt64Type>().value(row_index),
+            num_comment_lines: columns[base_column_index + 2].as_primitive::<UInt64Type>().value(row_index),
+            num_blank_lines: columns[base_column_index + 3].as_primitive::<UInt64Type>().value(row_index),
+
+            total_indent_levels: columns[base_column_index + 4].as_primitive::<UInt64Type>().value(row_index),
+            avg_indent_levels: columns[base_column_index + 5].as_primitive::<Float64Type>().value(row_index),
+            std_indent_levels: columns[base_column_index + 6].as_primitive::<Float64Type>().value(row_index)
+        }
+    }
+}
+
+impl FileHistoryEntry {
+    pub fn from_row(columns: &[&ArrayRef], row_index: usize, base_column_index: usize) -> FileHistoryEntry {
+        FileHistoryEntry {
+            name: columns[base_column_index].as_string_view().value(row_index).to_owned(),
+            revision: columns[base_column_index + 1].as_string_view().value(row_index).to_owned(),
+            date: columns[base_column_index + 2].as_primitive::<Int64Type>().value(row_index),
+
+            num_code_lines: columns[base_column_index + 3].as_primitive::<UInt64Type>().value(row_index),
+            num_comment_lines: columns[base_column_index + 4].as_primitive::<UInt64Type>().value(row_index),
+            num_blank_lines: columns[base_column_index + 5].as_primitive::<UInt64Type>().value(row_index),
+
+            total_indent_levels: columns[base_column_index + 6].as_primitive::<UInt64Type>().value(row_index),
+            avg_indent_levels: columns[base_column_index + 7].as_primitive::<Float64Type>().value(row_index),
+            std_indent_level: columns[base_column_index + 8].as_primitive::<Float64Type>().value(row_index)
+        }
     }
 }

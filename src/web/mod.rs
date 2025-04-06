@@ -4,7 +4,7 @@ use thiserror::Error;
 use axum::http::StatusCode;
 use axum::Json;
 use axum::response::{IntoResponse, Response};
-
+use crate::indexing::indexer::IndexError;
 use crate::querying::engine::QueryingError;
 
 pub mod app;
@@ -15,6 +15,8 @@ type WebAppResult<T> = Result<T, WebAppError>;
 enum WebAppError {
     #[error("Failed to persist state due to: {0}")]
     PersistState(std::io::Error),
+    #[error("Indexing: {0}")]
+    Indexing(IndexError),
     #[error("Querying: {0}")]
     Querying(QueryingError)
 }
@@ -26,6 +28,18 @@ impl IntoResponse for WebAppError {
                 with_response_code(
                     Json(
                         json!({
+                            "success": false,
+                            "message": err.to_string()
+                        })
+                    ).into_response(),
+                    StatusCode::INTERNAL_SERVER_ERROR
+                )
+            }
+            WebAppError::Indexing(err) => {
+                with_response_code(
+                    Json(
+                        json!({
+                            "success": false,
                             "message": err.to_string()
                         })
                     ).into_response(),
@@ -36,6 +50,7 @@ impl IntoResponse for WebAppError {
                 with_response_code(
                     Json(
                         json!({
+                            "success": false,
                             "message": err.to_string()
                         })
                     ).into_response(),
@@ -43,6 +58,12 @@ impl IntoResponse for WebAppError {
                 )
             }
         }
+    }
+}
+
+impl From<IndexError> for WebAppError {
+    fn from(err: IndexError) -> Self {
+        WebAppError::Indexing(err)
     }
 }
 

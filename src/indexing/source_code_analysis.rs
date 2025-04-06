@@ -8,7 +8,7 @@ pub struct SourceCodeStats {
 
     pub total_indent_levels: u64,
     pub avg_indent_levels: f64,
-    pub std_indent_level: f64,
+    pub std_indent_levels: f64,
 }
 
 pub fn calculate_source_code_stats(file_extension: &str, content: &str) -> SourceCodeStats {
@@ -76,6 +76,6 @@ pub fn calculate_source_code_stats(file_extension: &str, content: &str) -> Sourc
 
         total_indent_levels,
         avg_indent_levels: total_indent_levels_f64 / num_code_lines_f64,
-        std_indent_level: (square_total_indent_levels as f64 - (total_indent_levels_f64 * total_indent_levels_f64) / num_code_lines_f64) / num_code_lines_f64
+        std_indent_levels: (square_total_indent_levels as f64 - (total_indent_levels_f64 * total_indent_levels_f64) / num_code_lines_f64) / num_code_lines_f64
     }
 }

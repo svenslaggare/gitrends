@@ -1,5 +1,58 @@
 import axios from "axios";
 
+export interface Summary {
+    num_revisions: number;
+    first_commit: Commit;
+    last_commit: Commit;
+
+    num_code_lines: number;
+    num_files: number;
+    num_modules: number;
+
+    top_authors: Author[];
+
+    top_code_files: FileEntry[];
+    last_changed_files: FileHistoryEntry[];
+}
+
+export interface Commit {
+    revision: string;
+    date: number;
+    author: string;
+    commit_message: string;
+}
+
+export interface Author {
+    name: string;
+    num_revisions: number;
+}
+
+export interface FileEntry {
+    name: string;
+
+    num_code_lines: number;
+    num_comment_lines: number;
+    num_blank_lines: number;
+
+    total_indent_levels: number;
+    avg_indent_levels: number;
+    std_indent_levels: number;
+}
+
+export interface FileHistoryEntry {
+    name: string;
+    revision: string;
+    date: number;
+
+    num_code_lines: number;
+    num_comment_lines: number;
+    num_blank_lines: number;
+
+    total_indent_levels: number;
+    avg_indent_levels: number;
+    std_indent_levels: number;
+}
+
 export interface Module {
     name: string;
     files: ModuleFile[];
@@ -24,19 +77,6 @@ export interface ChangeCoupling {
     coupled_revisions: number;
     num_left_revisions: number;
     num_right_revisions: number;
-}
-
-export interface FileHistoryEntry {
-    revision: string;
-    date: number;
-
-    num_code_lines: number;
-    num_comment_lines: number;
-    num_blank_lines: number;
-
-    total_indent_levels: number;
-    avg_indent_levels: number;
-    std_indent_level: number;
 }
 
 export interface FileHistory {

@@ -38,6 +38,42 @@ impl ModuleDefinitions {
     }
 }
 
+pub struct AuthorNormalizer {
+    authors: Vec<(String, String)>
+}
+
+impl AuthorNormalizer {
+    pub fn new(definition: &str) -> Result<AuthorNormalizer, ModuleDefinitionError> {
+        let mut authors = Vec::new();
+
+        let rename_pattern = Regex::new("(.*)=>(.*)").unwrap();
+        for line in definition.lines() {
+            if let Some(line_capture) = rename_pattern.captures(&line) {
+                authors.push((
+                    line_capture[1].trim().to_owned(),
+                    line_capture[2].trim().to_owned()
+                ));
+            }
+        }
+
+        Ok(AuthorNormalizer { authors })
+    }
+
+    pub fn empty() -> AuthorNormalizer {
+        AuthorNormalizer { authors: Vec::new() }
+    }
+
+    pub fn normalize(&self, author: &str) -> Option<&str> {
+        for (source, target) in &self.authors {
+            if source == author {
+                return Some(target);
+            }
+        }
+
+        None
+    }
+}
+
 pub struct IgnoreFile {
     patterns: Vec<Pattern>
 }

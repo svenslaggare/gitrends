@@ -91,3 +91,15 @@
 .sortable-column-header {
     cursor: pointer;
 }
+
+.row-spacing {
+    margin-bottom: 3em;
+}
+
+.text-button {
+    cursor: pointer;
+}
+
+.text-button:hover {
+    font-weight: bold;
+}

@@ -17,6 +17,7 @@ use askama::Template;
 use serde_json::json;
 use tokio::net::TcpListener;
 use tokio::sync::Mutex;
+use tokio::task::spawn_blocking;
 use tower_http::services::ServeDir;
 
 use crate::indexing::indexer;
@@ -54,8 +55,13 @@ pub async fn main(config: WebAppConfig) {
         .route("/", get(index))
         .route("/{*path}", get(index))
 
+        .route("/api/state/reload", put(reload_data))
+        .route("/api/state/reindex", put(reindex_data))
+
         .route("/api/state/valid-date", get(get_valid_date))
         .route("/api/state/valid-date", put(set_valid_date))
+
+        .route("/api/summary", get(get_summary))
 
         .route("/api/git/log", get(get_git_log))
 
@@ -84,6 +90,19 @@ struct WebAppState {
     config: WebAppConfig,
     persistent_state: Mutex<PersistentWebAppState>,
     repository_querying: ArcSwap<RepositoryQuerying>
+}
+
+impl WebAppState {
+    pub async fn recreate_repository_querying(&self, persistent_state: &PersistentWebAppState) -> WebAppResult<()> {
+        self.repository_querying.store(Arc::new(
+            RepositoryQuerying::new(
+                &self.config.data_dir,
+                persistent_state.querying_config.clone()
+            ).await?
+        ));
+
+        Ok(())
+    }
 }
 
 #[derive(Clone, Deserialize, Serialize)]
@@ -121,6 +140,29 @@ async fn index() -> Response {
     Html(template.render().unwrap()).into_response()
 }
 
+async fn reload_data(
+    State(state): State<Arc<WebAppState>>
+)  -> WebAppResult<impl IntoResponse> {
+    let persistent_state = state.persistent_state.lock().await;
+    state.recreate_repository_querying(&persistent_state).await?;
+
+    Ok(Json(json!({ "success": true })))
+}
+
+async fn reindex_data(
+    State(state): State<Arc<WebAppState>>
+)  -> WebAppResult<impl IntoResponse> {
+    let state_clone = state.clone();
+    spawn_blocking(move || {
+        indexer::index_repository(&state_clone.config.source_dir, &state_clone.config.data_dir)
+    }).await.unwrap()?;
+
+    let persistent_state = state.persistent_state.lock().await;
+    state.recreate_repository_querying(&persistent_state).await?;
+
+    Ok(Json(json!({ "success": true })))
+}
+
 #[derive(Serialize, Deserialize)]
 struct ValidDate {
     min_date: Option<i64>,
@@ -131,6 +173,7 @@ async fn get_valid_date(
     State(state): State<Arc<WebAppState>>
 )  -> WebAppResult<impl IntoResponse> {
     let persistent_state = state.persistent_state.lock().await;
+
     Ok(
         Json(
             ValidDate {
@@ -152,14 +195,17 @@ async fn set_valid_date(
     persistent_state.save_to_file(&state.config.data_dir.join("state.json"))
         .map_err(|err| WebAppError::PersistState(err))?;
 
-    state.repository_querying.store(Arc::new(
-        RepositoryQuerying::new(
-            &state.config.data_dir,
-            persistent_state.querying_config.clone()
-        ).await?
-    ));
+    state.recreate_repository_querying(&persistent_state).await?;
 
     Ok(Json(json!({ "success": true })))
+}
+
+async fn get_summary(
+    State(state): State<Arc<WebAppState>>
+) -> WebAppResult<impl IntoResponse> {
+    let repository_querying = state.repository_querying.load();
+
+    Ok(Json(repository_querying.summary().await?))
 }
 
 async fn get_git_log(

@@ -17,6 +17,7 @@ import {getErrorMessage} from "./helpers/misc";
 import {TimelineView} from "./views/timeline";
 import {ChangeCouplingStructureView} from "./views/changeCouplingStructure";
 import {ModulesView} from "./views/modules";
+import {HomeView} from "./views/home";
 
 interface ApplicationMainProps {
 
@@ -101,6 +102,13 @@ class ApplicationMain extends React.Component<ApplicationMainProps, ApplicationM
                     <div className="offcanvas-body d-md-flex flex-column p-0 pt-lg-3 overflow-y-auto">
                         <ul className="nav flex-column">
                             <li className="nav-item">
+                                <RenderLink to="/">
+                                    <i className="fa-solid fa-house" />
+                                    Home
+                                </RenderLink>
+                            </li>
+
+                            <li className="nav-item">
                                 <RenderLink to="/timeline">
                                     <i className="fa-solid fa-timeline" />
                                     Timeline
@@ -137,15 +145,15 @@ class ApplicationMain extends React.Component<ApplicationMainProps, ApplicationM
                             </li>
                         </ul>
 
-                        <hr className="my-3"/>
+                        {/*<hr className="my-3"/>*/}
 
-                        <ul className="nav flex-column mb-auto">
-                            <li className="nav-item">
-                                <a className="nav-link d-flex align-items-center gap-2" href="#">
-                                    Settings
-                                </a>
-                            </li>
-                        </ul>
+                        {/*<ul className="nav flex-column mb-auto">*/}
+                        {/*    <li className="nav-item">*/}
+                        {/*        <a className="nav-link d-flex align-items-center gap-2" href="#">*/}
+                        {/*            Settings*/}
+                        {/*        </a>*/}
+                        {/*    </li>*/}
+                        {/*</ul>*/}
                     </div>
                 </div>
             </div>
@@ -181,7 +189,7 @@ class ApplicationMain extends React.Component<ApplicationMainProps, ApplicationM
                         <RenderChangeCouplingStructureView self={this} />
                     </Route>
                     <Route path="/">
-                        <HotspotStructureView onError={error => { this.setError(error); }} />
+                        <HomeView onError={error => { this.setError(error); }} />
                     </Route>
                 </Switch>
             </main>

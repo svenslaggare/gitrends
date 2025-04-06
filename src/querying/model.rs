@@ -3,7 +3,43 @@ use std::fmt::{Display, Formatter};
 
 use serde::Serialize;
 
+use crate::indexing::indexer::GitLogEntry;
 use crate::querying::printing::{TablePrinter, TablePrinting};
+
+#[derive(Debug, Serialize)]
+pub struct RepositorySummary {
+    pub num_revisions: u64,
+    pub first_commit: Option<GitLogEntry>,
+    pub last_commit: Option<GitLogEntry>,
+
+    pub num_code_lines: u64,
+    pub num_files: u64,
+    pub num_modules: u64,
+
+    pub top_authors: Vec<Author>,
+
+    pub top_code_files: Vec<FileEntry>,
+    pub last_changed_files: Vec<FileHistoryEntry>
+}
+
+#[derive(Debug, Serialize)]
+pub struct Author {
+    pub name: String,
+    pub num_revisions: u64
+}
+
+#[derive(Debug, Serialize)]
+pub struct FileEntry {
+    pub name: String,
+
+    pub num_code_lines: u64,
+    pub num_comment_lines: u64,
+    pub num_blank_lines: u64,
+
+    pub total_indent_levels: u64,
+    pub avg_indent_levels: f64,
+    pub std_indent_levels: f64
+}
 
 #[derive(Debug, Serialize)]
 pub struct Module {
@@ -16,6 +52,49 @@ pub struct ModuleFile {
     pub file_name: String,
     pub num_code_lines: u64,
     pub total_indent_levels: u64
+}
+
+#[derive(Debug, Serialize)]
+pub struct FileHistoryEntry {
+    pub name: String,
+    pub revision: String,
+    pub date: i64,
+
+    pub num_code_lines: u64,
+    pub num_comment_lines: u64,
+    pub num_blank_lines: u64,
+
+    pub total_indent_levels: u64,
+    pub avg_indent_levels: f64,
+    pub std_indent_level: f64
+}
+
+impl TablePrinting for FileHistoryEntry {
+    fn get_column_names() -> Vec<String> {
+        vec![
+            "revision".to_string(),
+            "date".to_string(),
+            "num_code_lines".to_string(),
+            "num_comment_lines".to_string(),
+            "num_blank_lines".to_string(),
+            "total_indent_levels".to_string(),
+            "avg_indent_levels".to_string(),
+            "std_indent_level".to_string(),
+        ]
+    }
+
+    fn add_row(&self, table_printer: &mut TablePrinter) {
+        table_printer.add_row(vec![
+            self.revision.clone(),
+            self.date.to_string(),
+            self.num_code_lines.to_string(),
+            self.num_comment_lines.to_string(),
+            self.num_blank_lines.to_string(),
+            self.total_indent_levels.to_string(),
+            self.avg_indent_levels.to_string(),
+            self.std_indent_level.to_string()
+        ]);
+    }
 }
 
 #[derive(Debug, Serialize)]
@@ -111,48 +190,6 @@ impl TablePrinting for ChangeCoupling {
             self.coupled_revisions.to_string(),
             self.num_left_revisions.to_string(),
             self.num_right_revisions.to_string(),
-        ]);
-    }
-}
-
-#[derive(Debug, Serialize)]
-pub struct FileHistoryEntry {
-    pub revision: String,
-    pub date: i64,
-
-    pub num_code_lines: u64,
-    pub num_comment_lines: u64,
-    pub num_blank_lines: u64,
-
-    pub total_indent_levels: u64,
-    pub avg_indent_levels: f64,
-    pub std_indent_level: f64
-}
-
-impl TablePrinting for FileHistoryEntry {
-    fn get_column_names() -> Vec<String> {
-        vec![
-            "revision".to_string(),
-            "date".to_string(),
-            "num_code_lines".to_string(),
-            "num_comment_lines".to_string(),
-            "num_blank_lines".to_string(),
-            "total_indent_levels".to_string(),
-            "avg_indent_levels".to_string(),
-            "std_indent_level".to_string(),
-        ]
-    }
-
-    fn add_row(&self, table_printer: &mut TablePrinter) {
-        table_printer.add_row(vec![
-            self.revision.clone(),
-            self.date.to_string(),
-            self.num_code_lines.to_string(),
-            self.num_comment_lines.to_string(),
-            self.num_blank_lines.to_string(),
-            self.total_indent_levels.to_string(),
-            self.avg_indent_levels.to_string(),
-            self.std_indent_level.to_string()
         ]);
     }
 }

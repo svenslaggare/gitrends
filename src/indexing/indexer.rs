@@ -37,7 +37,7 @@ pub struct GitFileEntry {
 
     pub total_indent_levels: u64,
     pub avg_indent_levels: f64,
-    pub std_indent_level: f64
+    pub std_indent_levels: f64
 }
 
 pub fn try_index_repository(repository: &Path, output_directory: &Path) -> Result<(), IndexError> {
@@ -122,6 +122,8 @@ pub fn index_repository(repository: &Path, output_directory: &Path) -> Result<()
 
     git_log_writer.close()?;
     git_entries_writer.close()?;
+
+    println!("Indexing done.");
 
     Ok(())
 }
@@ -223,7 +225,7 @@ fn index_commit(
 
                     total_indent_levels: source_stats.total_indent_levels,
                     avg_indent_levels: source_stats.avg_indent_levels,
-                    std_indent_level: source_stats.std_indent_level
+                    std_indent_levels: source_stats.std_indent_levels
                 }
             );
         }

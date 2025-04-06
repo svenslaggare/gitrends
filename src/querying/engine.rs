@@ -11,7 +11,7 @@ use datafusion::prelude::*;
 
 use crate::indexing::indexer::GitLogEntry;
 use crate::querying::{custom_functions, QueryingResult};
-use crate::querying::model::{Author, ChangeCoupling, FileEntry, FileHistoryEntry, Hotspot, Module, RepositorySummary};
+use crate::querying::model::{Author, ChangeCoupling, FileEntry, FileHistoryEntry, Hotspot, MainDeveloperEntry, Module, RepositorySummary};
 
 #[derive(Clone, Deserialize, Serialize)]
 pub struct RepositoryQueryingConfig {
@@ -647,6 +647,60 @@ impl RepositoryQuerying {
         );
 
         Ok(entries)
+    }
+
+    pub async fn main_developer(&self) -> QueryingResult<Vec<MainDeveloperEntry>> {
+        let result_df = self.ctx
+            .sql(
+                r#"
+                SELECT
+                    file_name,
+                    SUM(net_added_lines) AS total_net_added_lines,
+                    LAST_VALUE(author ORDER BY net_added_lines) AS main_developer,
+                    LAST_VALUE(net_added_lines ORDER BY net_added_lines) AS main_developer_net_added_lines
+                FROM (
+                    SELECT
+                        file_name,
+                        normalize_author(author) AS author,
+                        SUM(GREATEST(added_lines - removed_lines, 0)) AS net_added_lines
+                    FROM git_file_entries
+                    INNER JOIN
+                        git_log ON git_log.revision = git_file_entries.revision
+                    GROUP BY file_name, normalize_author(author)
+                ) AS nested
+                GROUP BY file_name
+                ORDER BY
+                    CASE
+                        WHEN total_net_added_lines > 0 THEN (main_developer_net_added_lines::real / total_net_added_lines::real)
+                        ELSE 0.0
+                    END
+                    DESC
+                "#
+            )
+            .await?;
+
+        let mut main_developer_entries = Vec::new();
+        yield_rows(
+            result_df.collect().await?,
+            4,
+            |columns, row_index| {
+                let file_name = columns[0].as_string_view().value(row_index).to_owned();
+                let total_net_added_lines = columns[1].as_primitive::<Int64Type>().value(row_index);
+                let main_developer = columns[2].as_string_view().value(row_index).to_owned();
+                let net_added_lines = columns[3].as_primitive::<Int64Type>().value(row_index);
+
+                main_developer_entries.push(
+                    MainDeveloperEntry {
+                        name: file_name,
+                        main_developer,
+                        net_added_lines,
+                        total_net_added_lines
+                    }
+                );
+            }
+        );
+
+        Ok(main_developer_entries)
     }
 
     async fn get_num_file_revisions(&self) -> QueryingResult<HashMap<String, u64>> {

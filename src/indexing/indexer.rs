@@ -1,7 +1,7 @@
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::fs::{File};
 use std::path::Path;
-
+use std::time::Instant;
 use chrono::{DateTime, FixedOffset, TimeZone, Utc};
 use thiserror::Error;
 use serde::Serialize;
@@ -31,6 +31,9 @@ pub struct GitFileEntry {
     pub date: i64,
     pub exists_at_head: bool,
 
+    pub added_lines: i64,
+    pub removed_lines: i64,
+
     pub num_code_lines: u64,
     pub num_comment_lines: u64,
     pub num_blank_lines: u64,
@@ -49,6 +52,8 @@ pub fn try_index_repository(repository: &Path, output_directory: &Path) -> Resul
 }
 
 pub fn index_repository(repository: &Path, output_directory: &Path) -> Result<(), IndexError> {
+    let t0 = Instant::now();
+
     println!("Indexing repository...");
     if !output_directory.exists() {
         std::fs::create_dir_all(output_directory)?;
@@ -123,7 +128,7 @@ pub fn index_repository(repository: &Path, output_directory: &Path) -> Result<()
     git_log_writer.close()?;
     git_entries_writer.close()?;
 
-    println!("Indexing done.");
+    println!("Indexing done (took {:.1} seconds).", t0.elapsed().as_secs_f64());
 
     Ok(())
 }
@@ -182,6 +187,38 @@ fn index_commit(
 
     let mut git_file_entries = Vec::new();
 
+    let mut added_lines = HashMap::new();
+    let mut removed_lines = HashMap::new();
+    diff.foreach(
+        &mut |_, _| {
+           true
+        },
+        None,
+        None,
+        Some(
+            &mut |diff, _, line| {
+                // println!("{}: {} -> {}",  diff.new_file().path().unwrap().display(), line.old_lineno().unwrap_or(0), line.new_lineno().unwrap_or(0));
+
+                if let Some(file_path) = diff.new_file().path().map(|x| x.to_str()).flatten() {
+                    let is_added = line.old_lineno().is_none();
+
+                    let add_entry = added_lines.entry(file_path.to_owned()).or_insert(0);
+                    if is_added {
+                        *add_entry += 1;
+                    }
+
+                    let is_removed = line.new_lineno().is_none();
+                    let remove_entry = removed_lines.entry(file_path.to_owned()).or_insert(0);
+                    if is_removed {
+                        *remove_entry += 1;
+                    }
+                }
+
+                true
+            }
+        )
+    )?;
+
     for delta in diff.deltas() {
         let file_path = delta.new_file().path().unwrap();
         let file_path_str = file_path.to_str().unwrap().to_owned();
@@ -211,6 +248,13 @@ fn index_commit(
 
         if let Some(source_stats) = source_code_stats {
             indexed_files.insert(index_key);
+            // println!(
+            //     "{}, {}: {}, {}",
+            //      short_commit_hash,
+            //     file_path_str,
+            //     added_lines.get(&file_path_str).cloned().unwrap_or(0),
+            //     removed_lines.get(&file_path_str).cloned().unwrap_or(0)
+            // );
 
             git_file_entries.push(
                 GitFileEntry {
@@ -218,6 +262,9 @@ fn index_commit(
                     file_name: file_path_str.clone(),
                     date: commit_time.timestamp(),
                     exists_at_head: head_files.contains(&file_path_str),
+
+                    added_lines: added_lines.get(&file_path_str).cloned().unwrap_or(0),
+                    removed_lines: removed_lines.get(&file_path_str).cloned().unwrap_or(0),
 
                     num_code_lines: source_stats.num_code_lines,
                     num_comment_lines: source_stats.num_comment_lines,

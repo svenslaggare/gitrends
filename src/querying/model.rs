@@ -491,3 +491,21 @@ impl RawChangeCouplingTree {
         root
     }
 }
+
+#[derive(Debug, Serialize)]
+pub struct MainDeveloperEntry {
+    pub name: String,
+    pub main_developer: String,
+    pub net_added_lines: i64,
+    pub total_net_added_lines: i64
+}
+
+impl MainDeveloperEntry {
+    pub fn ownership_ratio(&self) -> f64 {
+        if self.total_net_added_lines == 0 {
+            return 0.0;
+        }
+
+        self.net_added_lines as f64 / self.total_net_added_lines as f64
+    }
+}

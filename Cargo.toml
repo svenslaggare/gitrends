@@ -7,6 +7,7 @@ edition = "2021"
 thiserror = "2"
 chrono = { version = "0.4", features=["serde"] }
 arc-swap = "1"
+float-ord = "0.3"
 
 git2 = "0.20"
 

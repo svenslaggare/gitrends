@@ -8,6 +8,8 @@ use crate::querying::printing::{TablePrinter, TablePrinting};
 
 #[derive(Debug, Serialize)]
 pub struct RepositorySummary {
+    pub data_directory: String,
+
     pub num_revisions: u64,
     pub first_commit: Option<GitLogEntry>,
     pub last_commit: Option<GitLogEntry>,

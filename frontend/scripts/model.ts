@@ -1,6 +1,8 @@
 import axios from "axios";
 
 export interface Summary {
+    data_directory: string;
+
     num_revisions: number;
     first_commit: Commit;
     last_commit: Commit;

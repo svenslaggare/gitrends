@@ -4,8 +4,9 @@ use thiserror::Error;
 use axum::http::StatusCode;
 use axum::Json;
 use axum::response::{IntoResponse, Response};
+
 use crate::indexing::indexer::IndexError;
-use crate::querying::engine::QueryingError;
+use crate::querying::QueryingError;
 
 pub mod app;
 

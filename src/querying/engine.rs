@@ -1,41 +1,17 @@
 use std::collections::{BTreeMap, HashMap};
-use std::path::Path;
-use std::sync::Arc;
+use std::path::{Path, PathBuf};
 
-use thiserror::Error;
 use serde::{Deserialize, Serialize};
 
-use datafusion::arrow::array::{Array, ArrayRef, AsArray, BooleanArray, RecordBatch, StringViewArray};
-use datafusion::arrow::datatypes::{DataType, Float64Type, Int64Type, UInt64Type};
-use datafusion::common::cast::as_string_array;
+use datafusion::arrow::array::{Array, ArrayRef, AsArray, RecordBatch};
+use datafusion::arrow::datatypes::{Float64Type, Int64Type, UInt64Type};
 use datafusion::common::ScalarValue;
 use datafusion::error::DataFusionError;
-use datafusion::logical_expr::{ColumnarValue, Volatility};
 use datafusion::prelude::*;
 
 use crate::indexing::indexer::GitLogEntry;
-use crate::querying::extras::{AuthorNormalizer, IgnoreFile, ModuleDefinitionError, ModuleDefinitions};
+use crate::querying::{custom_functions, QueryingResult};
 use crate::querying::model::{Author, ChangeCoupling, FileEntry, FileHistoryEntry, Hotspot, Module, ModuleFile, RepositorySummary};
-
-#[derive(Debug, Error)]
-pub enum QueryingError {
-    #[error("DataFusion: {0}")]
-    DataFusion(DataFusionError),
-    #[error("Module definition: {0}")]
-    ModuleDefinition(ModuleDefinitionError)
-}
-
-impl From<DataFusionError> for QueryingError {
-    fn from(err: DataFusionError) -> Self {
-        QueryingError::DataFusion(err)
-    }
-}
-
-impl From<ModuleDefinitionError> for QueryingError {
-    fn from(err: ModuleDefinitionError) -> Self {
-        QueryingError::ModuleDefinition(err)
-    }
-}
 
 #[derive(Clone, Deserialize, Serialize)]
 pub struct RepositoryQueryingConfig {
@@ -53,11 +29,12 @@ impl Default for RepositoryQueryingConfig {
 }
 
 pub struct RepositoryQuerying {
+    pub data_directory: PathBuf,
     pub ctx: SessionContext
 }
 
 impl RepositoryQuerying {
-    pub async fn new(data_directory: &Path, config: RepositoryQueryingConfig) -> Result<RepositoryQuerying, QueryingError> {
+    pub async fn new(data_directory: &Path, config: RepositoryQueryingConfig) -> QueryingResult<RepositoryQuerying> {
         let ctx = SessionContext::new();
 
         ctx.register_parquet(
@@ -72,102 +49,7 @@ impl RepositoryQuerying {
             ParquetReadOptions::default()
         ).await?;
 
-        let ignore_file = match std::fs::read_to_string(data_directory.join("ignore.txt")) {
-            Ok(definition) => IgnoreFile::new(&definition),
-            _ => IgnoreFile::empty()
-        };
-
-        let is_ignored = create_udf(
-            "is_ignored",
-            vec![DataType::Utf8],
-            DataType::Boolean,
-            Volatility::Immutable,
-            Arc::new(move |args: &[ColumnarValue]| {
-                let args = ColumnarValue::values_to_arrays(args)?;
-                let file_name = as_string_array(&args[0]).expect("cast failed");
-
-                let array = file_name
-                    .iter()
-                    .map(|file_name| {
-                        file_name.map(|file_name| {
-                            ignore_file.is_ignored(file_name)
-                        })
-                    })
-                    .collect::<BooleanArray>();
-
-                Ok(ColumnarValue::from(Arc::new(array) as ArrayRef))
-            })
-        );
-        ctx.register_udf(is_ignored.clone());
-
-        let module_definitions = match std::fs::read_to_string(data_directory.join("modules.txt")) {
-            Ok(definition) => ModuleDefinitions::new(&definition)?,
-            _ => ModuleDefinitions::empty()
-        };
-
-        let extract_module_name = create_udf(
-            "extract_module_name",
-            vec![DataType::Utf8],
-            DataType::Utf8View,
-            Volatility::Immutable,
-            Arc::new(move |args: &[ColumnarValue]| {
-                let args = ColumnarValue::values_to_arrays(args)?;
-                let file_name = as_string_array(&args[0]).expect("cast failed");
-
-                let array = file_name
-                    .iter()
-                    .map(|file_name| {
-                        file_name.map(|file_name| {
-                            if let Some(module_name) = module_definitions.get_module(file_name) {
-                                return module_name.to_owned();
-                            }
-
-                            if let Some(parent) = Path::new(file_name).parent() {
-                                let parent = parent.to_str().unwrap().to_owned();
-                                if !parent.is_empty() {
-                                    parent
-                                } else {
-                                    "<root>".to_owned()
-                                }
-                            } else {
-                                file_name.to_owned()
-                            }
-                        })
-                    })
-                    .collect::<StringViewArray>();
-
-                Ok(ColumnarValue::from(Arc::new(array) as ArrayRef))
-            })
-        );
-        ctx.register_udf(extract_module_name.clone());
-
-        let author_normalizer = match std::fs::read_to_string(data_directory.join("authors.txt")) {
-            Ok(definition) => AuthorNormalizer::new(&definition)?,
-            _ => AuthorNormalizer::empty()
-        };
-
-        let normalize_author = create_udf(
-            "normalize_author",
-            vec![DataType::Utf8],
-            DataType::Utf8View,
-            Volatility::Immutable,
-            Arc::new(move |args: &[ColumnarValue]| {
-                let args = ColumnarValue::values_to_arrays(args)?;
-                let author = as_string_array(&args[0]).expect("cast failed");
-
-                let array = author
-                    .iter()
-                    .map(|file_name| {
-                        file_name.map(|author| {
-                            author_normalizer.normalize(author).unwrap_or(author).to_owned()
-                        })
-                    })
-                    .collect::<StringViewArray>();
-
-                Ok(ColumnarValue::from(Arc::new(array) as ArrayRef))
-            })
-        );
-        ctx.register_udf(normalize_author.clone());
+        custom_functions::add(data_directory, &ctx)?;
 
         ctx.sql(
             &format!(
@@ -274,11 +156,13 @@ impl RepositoryQuerying {
             "#
         ).await?;
 
-        Ok(RepositoryQuerying { ctx })
+        Ok(RepositoryQuerying { data_directory: data_directory.to_owned(), ctx })
     }
 
-    pub async fn summary(&self) -> Result<RepositorySummary, QueryingError> {
+    pub async fn summary(&self) -> QueryingResult<RepositorySummary> {
         let mut result = RepositorySummary {
+            data_directory: self.data_directory.to_str().unwrap().to_owned(),
+
             num_revisions: 0,
             first_commit: None,
             last_commit: None,
@@ -430,7 +314,7 @@ impl RepositoryQuerying {
         Ok(result)
     }
 
-    pub async fn log(&self) -> Result<Vec<GitLogEntry>, QueryingError> {
+    pub async fn log(&self) -> QueryingResult<Vec<GitLogEntry>> {
         let result_df = self.ctx.sql(
             r#"
             SELECT
@@ -452,7 +336,7 @@ impl RepositoryQuerying {
         Ok(entries)
     }
 
-    pub async fn modules(&self) -> Result<Vec<Module>, QueryingError> {
+    pub async fn modules(&self) -> QueryingResult<Vec<Module>> {
         let result_df = self.ctx.sql(
             r#"
             SELECT
@@ -485,7 +369,7 @@ impl RepositoryQuerying {
         Ok(modules.into_values().collect())
     }
 
-    pub async fn hotspots(&self, count: Option<usize>) -> Result<Vec<Hotspot>, QueryingError> {
+    pub async fn hotspots(&self, count: Option<usize>) -> QueryingResult<Vec<Hotspot>> {
         let result_df = self.ctx.sql(
             r#"
             SELECT
@@ -500,7 +384,7 @@ impl RepositoryQuerying {
         self.create_hotspots_results(result_df).await
     }
 
-    pub async fn module_hotspots(&self, count: Option<usize>) -> Result<Vec<Hotspot>, QueryingError> {
+    pub async fn module_hotspots(&self, count: Option<usize>) -> QueryingResult<Vec<Hotspot>> {
         let result_df = self.ctx.sql(
             r#"
             SELECT
@@ -515,7 +399,7 @@ impl RepositoryQuerying {
         self.create_hotspots_results(result_df).await
     }
 
-    async fn create_hotspots_results(&self, result_df: DataFrame) -> Result<Vec<Hotspot>, QueryingError> {
+    async fn create_hotspots_results(&self, result_df: DataFrame) -> QueryingResult<Vec<Hotspot>> {
         let mut hotspots = Vec::new();
         yield_rows(
             result_df.collect().await?,
@@ -535,7 +419,7 @@ impl RepositoryQuerying {
         Ok(hotspots)
     }
 
-    pub async fn change_couplings(&self, count: Option<usize>) -> Result<Vec<ChangeCoupling>, QueryingError> {
+    pub async fn change_couplings(&self, count: Option<usize>) -> QueryingResult<Vec<ChangeCoupling>> {
         let result_df = self.ctx.sql(
             r#"
             SELECT
@@ -566,7 +450,7 @@ impl RepositoryQuerying {
         ).await
     }
 
-    pub async fn change_couplings_for_file(&self, file_name: &str, count: Option<usize>) -> Result<Vec<ChangeCoupling>, QueryingError> {
+    pub async fn change_couplings_for_file(&self, file_name: &str, count: Option<usize>) -> QueryingResult<Vec<ChangeCoupling>> {
         let result_df = self.ctx
             .sql(
                 r#"
@@ -600,7 +484,7 @@ impl RepositoryQuerying {
         ).await
     }
 
-    pub async fn module_change_couplings(&self, count: Option<usize>) -> Result<Vec<ChangeCoupling>, QueryingError> {
+    pub async fn module_change_couplings(&self, count: Option<usize>) -> QueryingResult<Vec<ChangeCoupling>> {
         let result_df = self.ctx.sql(
             r#"
             SELECT
@@ -631,7 +515,7 @@ impl RepositoryQuerying {
         ).await
     }
 
-    pub async fn change_couplings_for_module(&self, module_name: &str, count: Option<usize>) -> Result<Vec<ChangeCoupling>, QueryingError> {
+    pub async fn change_couplings_for_module(&self, module_name: &str, count: Option<usize>) -> QueryingResult<Vec<ChangeCoupling>> {
         let result_df = self.ctx
             .sql(
                 r#"
@@ -669,7 +553,7 @@ impl RepositoryQuerying {
         &self,
         result_df: DataFrame,
         num_revisions: &HashMap<String, u64>
-    ) -> Result<Vec<ChangeCoupling>, QueryingError> {
+    ) -> QueryingResult<Vec<ChangeCoupling>> {
         let mut change_couplings = Vec::new();
         yield_rows(
             result_df.collect().await?,
@@ -693,7 +577,7 @@ impl RepositoryQuerying {
         Ok(change_couplings)
     }
 
-    pub async fn file_history(&self, file_name: &str) -> Result<Vec<FileHistoryEntry>, QueryingError> {
+    pub async fn file_history(&self, file_name: &str) -> QueryingResult<Vec<FileHistoryEntry>> {
         let result_df = self.ctx
             .sql(
                 r#"
@@ -729,7 +613,7 @@ impl RepositoryQuerying {
         Ok(entries)
     }
 
-    async fn get_num_file_revisions(&self) -> Result<HashMap<String, u64>, QueryingError> {
+    async fn get_num_file_revisions(&self) -> QueryingResult<HashMap<String, u64>> {
         let result_df = self.ctx.sql(
             r#"
             SELECT
@@ -743,12 +627,12 @@ impl RepositoryQuerying {
         self.create_num_revisions_results(result_df).await
     }
 
-    async fn get_num_module_revisions(&self) -> Result<HashMap<String, u64>, QueryingError> {
+    async fn get_num_module_revisions(&self) -> QueryingResult<HashMap<String, u64>> {
         let result_df = self.ctx.sql(r#"SELECT * FROM num_module_revisions"#).await?;
         self.create_num_revisions_results(result_df).await
     }
 
-    async fn create_num_revisions_results(&self, result_df: DataFrame) -> Result<HashMap<String, u64>, QueryingError> {
+    async fn create_num_revisions_results(&self, result_df: DataFrame) -> QueryingResult<HashMap<String, u64>> {
         let mut num_revisions_results = HashMap::new();
         yield_rows(
             result_df.collect().await?,

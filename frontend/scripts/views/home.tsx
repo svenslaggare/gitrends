@@ -36,7 +36,7 @@ export class HomeView extends React.Component<HomeViewProps, HomeViewState> {
         return (
             <div>
                 <div className="pt-3 pb-2 mb-3 border-bottom">
-                    <h1 className="h2">Home</h1>
+                    <h1 className="h2">Home - {this.state.summary?.data_directory}</h1>
                 </div>
 
                 {this.renderSummary()}

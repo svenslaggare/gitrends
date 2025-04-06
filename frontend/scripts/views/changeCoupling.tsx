@@ -11,6 +11,7 @@ interface ChangeCouplingViewProps {
     initialEntryType: EntryType
     onError: OnError;
     autoCompletionFiles: string[];
+    autoCompletionModules: string[];
 }
 
 interface ChangeCouplingViewState {
@@ -87,10 +88,12 @@ export class ChangeCouplingView extends React.Component<ChangeCouplingViewProps,
                 </div>
 
                 <AutoCompleteInput
-                    placeholder={"Enter file to show results for."}
-                    completions={this.props.autoCompletionFiles}
+                    placeholder={"Enter entry to show results for."}
+                    completions={
+                        this.state.entryType == EntryType.Module ? this.props.autoCompletionModules: this.props.autoCompletionFiles
+                    }
                     onShow={fileName => {
-                        this.fetchForFile(fileName);
+                        this.fetchForEntry(fileName);
                     }}
                 />
                 <br />
@@ -122,12 +125,12 @@ export class ChangeCouplingView extends React.Component<ChangeCouplingViewProps,
                                 if (this.state.selectedName == newName && this.state.entryType == EntryType.File) {
                                     this.showSelectedFileModal.current.show(newName);
                                 } else {
-                                    this.fetchForFile(newName);
+                                    this.fetchForEntry(newName);
                                 }
 
                                 break;
                             case "right_name":
-                                this.fetchForFile(changeCoupling[rowIndex][column]);
+                                this.fetchForEntry(changeCoupling[rowIndex][column]);
                                 break;
                         }
                     }}
@@ -161,11 +164,11 @@ export class ChangeCouplingView extends React.Component<ChangeCouplingViewProps,
             });
     }
 
-    fetchForFile(fileName: string) {
-        axios.get(`/api/${this.entryTypeName()}/change-coupling?name=${fileName}`)
+    fetchForEntry(name: string) {
+        axios.get(`/api/${this.entryTypeName()}/change-coupling?name=${name}`)
             .then(response => {
                 this.setState({
-                    selectedName: fileName,
+                    selectedName: name,
                     specificChangeCoupling: response.data
                 });
             })

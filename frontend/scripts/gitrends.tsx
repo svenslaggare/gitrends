@@ -27,6 +27,7 @@ interface ApplicationMainProps {
 interface ApplicationMainState {
     errorMessage: string;
     autoCompletionFiles: string[];
+    autoCompletionModules: string[];
 }
 
 class ApplicationMain extends React.Component<ApplicationMainProps, ApplicationMainState> {
@@ -35,10 +36,12 @@ class ApplicationMain extends React.Component<ApplicationMainProps, ApplicationM
 
         this.state = {
             errorMessage: null,
-            autoCompletionFiles: []
+            autoCompletionFiles: [],
+            autoCompletionModules: [],
         };
 
         this.fetchAutoCompletionFiles();
+        this.fetchAutoCompletionModules();
     }
 
     render() {
@@ -216,6 +219,18 @@ class ApplicationMain extends React.Component<ApplicationMainProps, ApplicationM
                 this.setState(error);
             });
     }
+
+    fetchAutoCompletionModules() {
+        axios.get(`/api/module`)
+            .then(response => {
+                this.setState({
+                    autoCompletionModules: response.data.map(module => module.name)
+                });
+            })
+            .catch(error => {
+                this.setState(error);
+            });
+    }
 }
 
 function RenderHotspotView({ self }: { self: ApplicationMain }) {
@@ -231,6 +246,7 @@ function RenderChangeCouplingView({ self }: { self: ApplicationMain }) {
     return (
         <ChangeCouplingView
             autoCompletionFiles={self.state.autoCompletionFiles}
+            autoCompletionModules={self.state.autoCompletionModules}
             initialEntryType={getEntryType(useLocation().hash)}
             onError={error => { self.setError(error); }}
         />

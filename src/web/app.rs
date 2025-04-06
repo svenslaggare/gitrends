@@ -326,7 +326,7 @@ async fn get_module_change_coupling_structure(
     let repository_querying = state.repository_querying.load();
 
     let change_couplings = repository_querying.module_change_couplings(None).await?;
-    let change_coupling_tree = ChangeCouplingTree::from_vec(&change_couplings, false, 2, 0.1);
+    let change_coupling_tree = ChangeCouplingTree::from_vec(&change_couplings, false, 15, 0.2);
     Ok(Json(change_coupling_tree))
 }
 

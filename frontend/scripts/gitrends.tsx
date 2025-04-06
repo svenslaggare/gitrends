@@ -1,22 +1,16 @@
 import React, {useEffect} from "react";
 import ReactDOM from 'react-dom'
 
-import {
-    BrowserRouter as Router,
-    Switch,
-    Route,
-    Link,
-    useLocation
-} from "react-router-dom";
+import {BrowserRouter as Router, Link, Route, Switch, useLocation} from "react-router-dom";
 
 import {ChangeCouplingView} from "./views/changeCoupling";
 import {HotspotView} from "./views/hotspot";
-import {HotspotStructureView} from "./views/hotspotStructure";
-import {AlertBox, EntryType, HotspotAnalysisType} from "./helpers/view";
+import {HotspotAnalysisType, HotspotStructureView} from "./views/hotspotStructure";
+import {AlertBox, EntryType} from "./helpers/view";
 import {getErrorMessage} from "./helpers/misc";
 import {TimelineView} from "./views/timeline";
 import {ChangeCouplingStructureView} from "./views/changeCouplingStructure";
-import {ModulesView} from "./views/modules";
+import {ModulesBreakdownType, ModulesView} from "./views/modules";
 import {HomeView} from "./views/home";
 import axios from "axios";
 
@@ -182,7 +176,7 @@ class ApplicationMain extends React.Component<ApplicationMainProps, ApplicationM
                         <TimelineView onError={error => { this.setError(error); }} />
                     </Route>
                     <Route path="/modules">
-                        <ModulesView onError={error => { this.setError(error); }} />
+                        <RenderModulesView self={this} />
                     </Route>
                     <Route path="/hotspots">
                         <RenderHotspotView self={this} />
@@ -233,6 +227,18 @@ class ApplicationMain extends React.Component<ApplicationMainProps, ApplicationM
     }
 }
 
+function RenderModulesView({ self }: { self: ApplicationMain }) {
+    return (
+        <ModulesView
+            initialBreakdownType={getTypeFromHash(
+                useLocation().hash,
+                new Map([["code", ModulesBreakdownType.CodeLines], ["complexity", ModulesBreakdownType.Complexity]])
+            )}
+            onError={error => { self.setError(error); }}
+        />
+    )
+}
+
 function RenderHotspotView({ self }: { self: ApplicationMain }) {
     return (
         <HotspotView
@@ -245,7 +251,10 @@ function RenderHotspotView({ self }: { self: ApplicationMain }) {
 function RenderHotspotStructureView({ self }: { self: ApplicationMain }) {
     return (
         <HotspotStructureView
-            initialAnalysisType={getHotspotAnalysisType(useLocation().hash)}
+            initialAnalysisType={getTypeFromHash(
+                useLocation().hash,
+                new Map([["revision", HotspotAnalysisType.Revision], ["author", HotspotAnalysisType.Author]])
+            )}
             onError={error => { self.setError(error); }}
         />
     )
@@ -272,32 +281,16 @@ function RenderChangeCouplingStructureView({ self }: { self: ApplicationMain }) 
 }
 
 function getEntryType(hash: string) {
-    let hashParts = hash.split("#");
-    if (hashParts.length == 2) {
-        switch (hashParts[1]) {
-            case "file":
-                return EntryType.File;
-            case "module":
-                return EntryType.Module;
-            default:
-                return null;
-        }
-    } else {
-        return null;
-    }
+    return getTypeFromHash(
+        hash,
+        new Map([["file", EntryType.File], ["module", EntryType.Module]])
+    );
 }
 
-function getHotspotAnalysisType(hash: string) {
+function getTypeFromHash<T>(hash: string, values: Map<string, T>): T {
     let hashParts = hash.split("#");
     if (hashParts.length == 2) {
-        switch (hashParts[1]) {
-            case "revision":
-                return HotspotAnalysisType.Revision;
-            case "author":
-                return HotspotAnalysisType.Author;
-            default:
-                return null;
-        }
+        return values.get(hashParts[1]) ?? null;
     } else {
         return null;
     }

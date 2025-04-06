@@ -5,7 +5,12 @@ import axios from "axios";
 
 import {OnError} from "../helpers/misc";
 import {ShowSelectedFileModal} from "../helpers/selectedFileModal";
-import {HotspotAnalysisType, HotspotAnalysisTypeSwitcher} from "../helpers/view";
+import {TypeSwitcher} from "../helpers/view";
+
+export enum HotspotAnalysisType {
+    Revision,
+    Author
+}
 
 interface HotspotStructureViewProps {
     initialAnalysisType: HotspotAnalysisType;
@@ -37,12 +42,14 @@ export class HotspotStructureView extends React.Component<HotspotStructureViewPr
                 <ShowSelectedFileModal ref={this.showSelectedFileModal} onError={this.props.onError} />
 
                 <div className="pt-3 pb-2 mb-3 border-bottom">
-                    <HotspotAnalysisTypeSwitcher
+                    <TypeSwitcher
+                        types={new Map([
+                            [HotspotAnalysisType.Revision, { name: "revision", display: "Revision", iconClassName: "fa-solid fa-code-commit" }],
+                            [HotspotAnalysisType.Author, { name: "author", display: "Author", iconClassName: "fa-regular fa-user" }]
+                        ])}
                         current={this.state.analysisType}
-                        onChange={hotspotAnalysisType => {
-                            this.setState({
-                                analysisType: hotspotAnalysisType
-                            });
+                        onChange={analysisType => {
+                            this.setState({ analysisType: analysisType });
                         }}
                     />
 
@@ -218,7 +225,7 @@ function StructureChart({ analysisType, hotspotTree, onFileSelect }: StructureCh
     );
 }
 
-export function getFilePath(node: d3.HierarchyCircularNode<HotspotTree>) {
+function getFilePath(node: d3.HierarchyCircularNode<HotspotTree>) {
     if (node.parent == null) {
         return "";
     }

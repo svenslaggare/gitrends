@@ -5,12 +5,20 @@ import axios from "axios";
 
 import {OnError} from "../helpers/misc";
 import {Module} from "../model";
+import {TypeSwitcher} from "../helpers/view";
+
+export enum ModulesBreakdownType {
+    CodeLines,
+    Complexity
+}
 
 interface ModulesViewProps {
+    initialBreakdownType: ModulesBreakdownType;
     onError: OnError;
 }
 
 interface ModulesViewState {
+    breakdownType: ModulesBreakdownType;
     modules: Module[];
 }
 
@@ -19,6 +27,7 @@ export class ModulesView extends React.Component<ModulesViewProps, ModulesViewSt
         super(props);
 
         this.state = {
+            breakdownType: this.props.initialBreakdownType ?? ModulesBreakdownType.CodeLines,
             modules: null
         }
 
@@ -29,6 +38,17 @@ export class ModulesView extends React.Component<ModulesViewProps, ModulesViewSt
         return (
             <div>
                 <div className="pt-3 pb-2 mb-3 border-bottom">
+                    <TypeSwitcher
+                        types={new Map([
+                            [ModulesBreakdownType.CodeLines, { name: "code", display: "Code lines", iconClassName: "fa-solid fa-code" }],
+                            [ModulesBreakdownType.Complexity, { name: "complexity", display: "Complexity", iconClassName: "fa-solid fa-chart-simple" }]
+                        ])}
+                        current={this.state.breakdownType}
+                        onChange={breakdownType => {
+                            this.setState({ breakdownType: breakdownType });
+                        }}
+                    />
+
                     <h1 className="h2">Modules</h1>
                 </div>
 
@@ -44,7 +64,10 @@ export class ModulesView extends React.Component<ModulesViewProps, ModulesViewSt
 
         return (
             <div className="flex-center">
-                <StructureChart modules={this.state.modules} />
+                <StructureChart
+                    breakdownType={this.state.breakdownType}
+                    modules={this.state.modules}
+                />
             </div>
         );
     }
@@ -62,7 +85,7 @@ export class ModulesView extends React.Component<ModulesViewProps, ModulesViewSt
     }
 }
 
-function StructureChart({ modules }: { modules: Module[] }) {
+function StructureChart({ breakdownType, modules }: { breakdownType: ModulesBreakdownType; modules: Module[] }) {
     let width = 1500;
     let height = 900;
     let margin = 35;
@@ -82,9 +105,20 @@ function StructureChart({ modules }: { modules: Module[] }) {
         data.children.push({
             name: module.name,
             children: module.files.map(file => {
+                let value = 0;
+                switch (breakdownType) {
+                    case ModulesBreakdownType.CodeLines:
+                        value = file.num_code_lines;
+                        break;
+                    case ModulesBreakdownType.Complexity:
+                        value = file.total_indent_levels;
+                        break;
+
+                }
+
                 return {
                     name: file.name,
-                    value: file.num_code_lines
+                    value: value
                 };
             })
         })

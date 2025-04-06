@@ -46,14 +46,7 @@ pub struct FileEntry {
 #[derive(Debug, Serialize)]
 pub struct Module {
     pub name: String,
-    pub files: Vec<ModuleFile>
-}
-
-#[derive(Debug, Serialize)]
-pub struct ModuleFile {
-    pub file_name: String,
-    pub num_code_lines: u64,
-    pub total_indent_levels: u64
+    pub files: Vec<FileEntry>
 }
 
 #[derive(Debug, Serialize)]

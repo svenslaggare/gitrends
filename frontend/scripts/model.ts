@@ -57,13 +57,7 @@ export interface FileHistoryEntry {
 
 export interface Module {
     name: string;
-    files: ModuleFile[];
-}
-
-export interface ModuleFile {
-    file_name: string;
-    num_code_lines: number;
-    total_indent_levels: number;
+    files: FileEntry[];
 }
 
 export interface Hotspot {

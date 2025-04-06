@@ -5,10 +5,12 @@ import {ChangeCoupling} from "../model";
 import {EntryType, EntryTypeSwitcher, Table} from "../helpers/view";
 import {OnError} from "../helpers/misc";
 import {ShowSelectedFileModal} from "../helpers/selectedFileModal";
+import {AutoCompleteInput} from "../helpers/autoCompleteInput";
 
 interface ChangeCouplingViewProps {
     initialEntryType: EntryType
     onError: OnError;
+    autoCompletionFiles: string[];
 }
 
 interface ChangeCouplingViewState {
@@ -30,7 +32,7 @@ export class ChangeCouplingView extends React.Component<ChangeCouplingViewProps,
             entryType: this.props.initialEntryType ?? EntryType.File,
             allChangeCoupling: [],
             specificChangeCoupling: [],
-            selectedName: null,
+            selectedName: null
         };
 
         this.fetchAll();
@@ -42,13 +44,14 @@ export class ChangeCouplingView extends React.Component<ChangeCouplingViewProps,
 
         return (
             <div>
-                <ShowSelectedFileModal ref={this.showSelectedFileModal} onError={this.props.onError} />
+                <ShowSelectedFileModal ref={this.showSelectedFileModal} onError={this.props.onError}/>
 
                 <div className="pt-3 pb-2 mb-3 border-bottom">
                     {
                         this.state.specificChangeCoupling.length > 0 ?
                             <button
-                                type="button" className="btn-close" aria-label="Close" style={{ float: "right", padding: "10px" }}
+                                type="button" className="btn-close" aria-label="Close"
+                                style={{float: "right", padding: "10px"}}
                                 onClick={() => {
                                     this.showSelectedFileModal.current.clear();
 
@@ -83,13 +86,22 @@ export class ChangeCouplingView extends React.Component<ChangeCouplingViewProps,
                     <h1 className="h2">Change coupling</h1>
                 </div>
 
+                <AutoCompleteInput
+                    placeholder={"Enter file to show results for."}
+                    completions={this.props.autoCompletionFiles}
+                    onShow={fileName => {
+                        this.fetchForFile(fileName);
+                    }}
+                />
+                <br />
+
                 <Table
                     columns={[
-                        { name: "left_name", display: `Left ${entryType} name`, clickable: true },
-                        { name: "right_name", display: `Right ${entryType} name`, clickable: true },
-                        { name: "coupled_revisions", display: "Number of coupled revisions", clickable: false },
-                        { name: "average_revisions", display: "Average number of revisions", clickable: false },
-                        { name: "coupling_ratio", display: "Amount of coupling (%)", clickable: false }
+                        {name: "left_name", display: `Left ${entryType} name`, clickable: true},
+                        {name: "right_name", display: `Right ${entryType} name`, clickable: true},
+                        {name: "coupled_revisions", display: "Number of coupled revisions", clickable: false},
+                        {name: "average_revisions", display: "Average number of revisions", clickable: false},
+                        {name: "coupling_ratio", display: "Amount of coupling (%)", clickable: false}
                     ]}
                     rows={changeCoupling}
                     extractColumn={(row: ChangeCoupling, name) => {
@@ -135,6 +147,7 @@ export class ChangeCouplingView extends React.Component<ChangeCouplingViewProps,
             return this.state.allChangeCoupling;
         }
     }
+
 
     fetchAll() {
         axios.get(`/api/${this.entryTypeName()}/change-coupling`)

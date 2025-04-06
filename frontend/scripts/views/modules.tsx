@@ -83,7 +83,7 @@ function StructureChart({ modules }: { modules: Module[] }) {
             name: module.name,
             children: module.files.map(file => {
                 return {
-                    name: file.file_name,
+                    name: file.name,
                     value: file.num_code_lines
                 };
             })

@@ -18,13 +18,15 @@ import {TimelineView} from "./views/timeline";
 import {ChangeCouplingStructureView} from "./views/changeCouplingStructure";
 import {ModulesView} from "./views/modules";
 import {HomeView} from "./views/home";
+import axios from "axios";
 
 interface ApplicationMainProps {
 
 }
 
 interface ApplicationMainState {
-    errorMessage: string
+    errorMessage: string;
+    autoCompletionFiles: string[];
 }
 
 class ApplicationMain extends React.Component<ApplicationMainProps, ApplicationMainState> {
@@ -32,8 +34,11 @@ class ApplicationMain extends React.Component<ApplicationMainProps, ApplicationM
         super(props);
 
         this.state = {
-            errorMessage: null
+            errorMessage: null,
+            autoCompletionFiles: []
         };
+
+        this.fetchAutoCompletionFiles();
     }
 
     render() {
@@ -199,6 +204,18 @@ class ApplicationMain extends React.Component<ApplicationMainProps, ApplicationM
     setError(error: any) {
         this.setState({ errorMessage: getErrorMessage(error) });
     }
+
+    fetchAutoCompletionFiles() {
+        axios.get(`/api/file`)
+            .then(response => {
+                this.setState({
+                    autoCompletionFiles: response.data.map(file => file.name)
+                });
+            })
+            .catch(error => {
+                this.setState(error);
+            });
+    }
 }
 
 function RenderHotspotView({ self }: { self: ApplicationMain }) {
@@ -213,6 +230,7 @@ function RenderHotspotView({ self }: { self: ApplicationMain }) {
 function RenderChangeCouplingView({ self }: { self: ApplicationMain }) {
     return (
         <ChangeCouplingView
+            autoCompletionFiles={self.state.autoCompletionFiles}
             initialEntryType={getEntryType(useLocation().hash)}
             onError={error => { self.setError(error); }}
         />

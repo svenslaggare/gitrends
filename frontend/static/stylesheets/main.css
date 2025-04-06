@@ -103,3 +103,14 @@
 .text-button:hover {
     font-weight: bold;
 }
+
+.auto-complete-input-visible {
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+}
+
+.auto-complete-dropdown-visible {
+    border-top: 0;
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+}

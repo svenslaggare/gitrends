@@ -65,6 +65,7 @@ pub async fn main(config: WebAppConfig) {
 
         .route("/api/git/log", get(get_git_log))
 
+        .route("/api/file", get(get_files))
         .route("/api/file/hotspots", get(get_file_hotspots))
         .route("/api/file/hotspots-structure", get(get_file_hotspots_structure))
         .route("/api/file/change-coupling", get(get_file_change_coupling))
@@ -214,6 +215,14 @@ async fn get_git_log(
     let repository_querying = state.repository_querying.load();
 
     Ok(Json(repository_querying.log().await?))
+}
+
+async fn get_files(
+    State(state): State<Arc<WebAppState>>
+) -> WebAppResult<impl IntoResponse> {
+    let repository_querying = state.repository_querying.load();
+
+    Ok(Json(repository_querying.files().await?))
 }
 
 async fn get_file_hotspots(

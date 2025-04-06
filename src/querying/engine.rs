@@ -11,7 +11,7 @@ use datafusion::prelude::*;
 
 use crate::indexing::indexer::GitLogEntry;
 use crate::querying::{custom_functions, QueryingResult};
-use crate::querying::model::{Author, ChangeCoupling, FileEntry, FileHistoryEntry, Hotspot, Module, ModuleFile, RepositorySummary};
+use crate::querying::model::{Author, ChangeCoupling, FileEntry, FileHistoryEntry, Hotspot, Module, RepositorySummary};
 
 #[derive(Clone, Deserialize, Serialize)]
 pub struct RepositoryQueryingConfig {
@@ -336,14 +336,50 @@ impl RepositoryQuerying {
         Ok(entries)
     }
 
+    pub async fn files(&self) -> QueryingResult<Vec<FileEntry>> {
+        let result_df = self.ctx.sql(
+            r#"
+            SELECT
+                file_name,
+
+                num_code_lines,
+                num_comment_lines,
+                num_blank_lines,
+
+                total_indent_levels,
+                avg_indent_levels,
+                std_indent_levels
+            FROM latest_revision_file_entries
+            "#
+        ).await?;
+
+        let mut files = Vec::new();
+        yield_rows(
+            result_df.collect().await?,
+            7,
+            |columns, row_index| {
+                files.push(FileEntry::from_row(columns, row_index, 0));
+            }
+        );
+
+        Ok(files)
+    }
+
     pub async fn modules(&self) -> QueryingResult<Vec<Module>> {
         let result_df = self.ctx.sql(
             r#"
             SELECT
                 extract_module_name(file_name) as module_name,
+
                 file_name,
+
                 num_code_lines,
-                total_indent_levels
+                num_comment_lines,
+                num_blank_lines,
+
+                total_indent_levels,
+                avg_indent_levels,
+                std_indent_levels
             FROM latest_revision_file_entries
             "#
         ).await?;
@@ -351,18 +387,13 @@ impl RepositoryQuerying {
         let mut modules = BTreeMap::new();
         yield_rows(
             result_df.collect().await?,
-            4,
+            8,
             |columns, row_index| {
                 let module_name = columns[0].as_string_view().value(row_index).to_owned();
                 modules.entry(module_name.clone())
                     .or_insert_with(|| Module { name: module_name, files: Vec::new() })
-                    .files.push(
-                        ModuleFile {
-                            file_name: columns[1].as_string_view().value(row_index).to_owned(),
-                            num_code_lines: columns[2].as_primitive::<UInt64Type>().value(row_index),
-                            total_indent_levels: columns[3].as_primitive::<UInt64Type>().value(row_index),
-                        }
-                    )
+                    .files
+                    .push(FileEntry::from_row(columns, row_index, 1))
             }
         );
 

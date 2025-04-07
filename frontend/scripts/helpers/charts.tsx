@@ -90,7 +90,7 @@ export function HistogramChart({ data, max, label, normalized }: { data: Map<str
     let marginRight = 60;
     let marginBottom = 30;
     let marginLeft = 60;
-    let binWidth = 20;
+    let binWidth = 40;
 
     const gy = useRef();
 

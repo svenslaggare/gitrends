@@ -168,3 +168,18 @@ export function HistogramChart({ data, max, label, normalized }: { data: Map<str
         </svg>
     );
 }
+
+export function EntryLegend({ x, y, values, color }: { x: number; y: number; values: string[], color: (name: string) => string }) {
+    return (
+        <text x={x} y={y}>
+            {
+                values.map((value, valueIndex) =>
+                    [
+                        <tspan key={valueIndex * 2} fill={color(value)} fontSize="16px">■ </tspan>,
+                        <tspan key={valueIndex * 2 + 1} fill="white">{value} </tspan>
+                    ]
+                )
+            }
+        </text>
+    );
+}

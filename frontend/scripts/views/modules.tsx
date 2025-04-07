@@ -6,6 +6,7 @@ import axios from "axios";
 import {OnError} from "../helpers/misc";
 import {Module} from "../model";
 import {TypeSwitcher} from "../helpers/view";
+import {EntryLegend} from "../helpers/charts";
 
 export enum ModulesBreakdownType {
     CodeLines,
@@ -144,18 +145,12 @@ function StructureChart({ breakdownType, modules }: { breakdownType: ModulesBrea
             viewBox={[0, 0, width, height].join(", ")}
             style={{ maxWidth: "100%", height: "auto", font: "10px sans-serif" }}
         >
-            {
-                <text y={20}>
-                    {
-                        root.children.map((child, childIndex) =>
-                            [
-                                <tspan key={childIndex * 2} fill={color(child.data.name)} fontSize="16px">■ </tspan>,
-                                <tspan key={childIndex * 2 + 1} fill="white">{child.data.name} </tspan>
-                            ]
-                        )
-                    }
-                </text>
-            }
+            <EntryLegend
+                x={0}
+                y={20}
+                values={root.children.map(child => child.data.name)}
+                color={color}
+            />
 
             <g transform={`translate(0, ${margin})`}>
                 {

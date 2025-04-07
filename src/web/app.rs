@@ -22,7 +22,7 @@ use tower_http::services::ServeDir;
 
 use crate::indexing::indexer;
 use crate::querying::engine::{RepositoryQuerying, RepositoryQueryingConfig};
-use crate::querying::model::{ChangeCouplingTree, HotspotTree};
+use crate::querying::model::{ChangeCouplingTree, HotspotTree, MainDeveloperTree};
 use crate::web::{WebAppError, WebAppResult};
 
 #[derive(Clone, Deserialize)]
@@ -72,6 +72,7 @@ pub async fn main(config: WebAppConfig) {
         .route("/api/file/change-coupling-structure", get(get_file_change_coupling_structure))
         .route("/api/file/history/{*file_name}", get(get_file_history))
         .route("/api/file/main-developer", get(get_files_main_developer))
+        .route("/api/file/main-developer-structure", get(get_files_main_developer_structure))
 
         .route("/api/module", get(get_modules))
         .route("/api/module/hotspots", get(get_module_hotspots))
@@ -291,6 +292,16 @@ async fn get_files_main_developer(
     let repository_querying = state.repository_querying.load();
 
     Ok(Json(repository_querying.files_main_developer().await?))
+}
+
+async fn get_files_main_developer_structure(
+    State(state): State<Arc<WebAppState>>
+) -> WebAppResult<impl IntoResponse> {
+    let repository_querying = state.repository_querying.load();
+
+    let main_developer_entries = repository_querying.files_main_developer().await?;
+    let main_developer_tree = MainDeveloperTree::from_vec(&main_developer_entries);
+    Ok(Json(main_developer_tree))
 }
 
 async fn get_modules(

@@ -500,12 +500,106 @@ pub struct MainDeveloperEntry {
     pub total_net_added_lines: i64
 }
 
-impl MainDeveloperEntry {
-    pub fn ownership_ratio(&self) -> f64 {
-        if self.total_net_added_lines == 0 {
-            return 0.0;
+#[derive(Debug, Serialize)]
+#[serde(tag="type")]
+pub enum MainDeveloperTree {
+    Tree {
+        name: String,
+        children: Vec<MainDeveloperTree>
+    },
+    Leaf {
+        name: String,
+        size: u64,
+        main_developer: String
+    }
+}
+
+impl MainDeveloperTree {
+    pub fn from_vec(main_developer_entries: &Vec<MainDeveloperEntry>) -> MainDeveloperTree {
+        MainDeveloperTree::from_raw(RawMainDeveloperTree::from_vec(main_developer_entries))
+    }
+
+    fn from_raw(root: RawMainDeveloperTree) -> MainDeveloperTree {
+        match root {
+            RawMainDeveloperTree::Tree { name, children } => {
+                let mut children = children
+                    .into_values()
+                    .map(|value| MainDeveloperTree::from_raw(value))
+                    .collect::<Vec<_>>();
+
+                children.sort_by_key(|child| child.name().to_owned());
+
+                MainDeveloperTree::Tree {
+                    name,
+                    children,
+                }
+            }
+            RawMainDeveloperTree::Leaf { name, size, main_developer } => {
+                MainDeveloperTree::Leaf { name, size, main_developer }
+            }
+        }
+    }
+}
+
+impl MainDeveloperTree {
+    pub fn name(&self) -> &str {
+        match self {
+            MainDeveloperTree::Tree { name, .. } => &name,
+            MainDeveloperTree::Leaf { name, .. } => &name
+        }
+    }
+}
+
+enum RawMainDeveloperTree {
+    Tree {
+        name: String,
+        children: HashMap<String, RawMainDeveloperTree>
+    },
+    Leaf {
+        name: String,
+        size: u64,
+        main_developer: String
+    }
+}
+
+impl RawMainDeveloperTree {
+    pub fn from_vec(main_developer_entries: &Vec<MainDeveloperEntry>) -> RawMainDeveloperTree {
+        let mut root = RawMainDeveloperTree::Tree {
+            name: "root".to_string(),
+            children: HashMap::new()
+        };
+
+        for main_developer_entry in main_developer_entries {
+            let mut current = &mut root;
+
+            let path = std::path::Path::new(&main_developer_entry.name);
+            let path_parts = path.iter().collect::<Vec<_>>();
+
+            for (part_index, part) in path_parts.iter().enumerate() {
+                let part_str = part.to_str().unwrap().to_owned();
+                let is_last = part_index == path_parts.len() - 1;
+
+                match current {
+                    RawMainDeveloperTree::Tree { children, .. } => {
+                        let entry = children.entry(part_str.clone()).or_insert_with(|| {
+                            if is_last {
+                                RawMainDeveloperTree::Leaf {
+                                    name: part_str,
+                                    size: main_developer_entry.total_net_added_lines as u64, // TODO
+                                    main_developer: main_developer_entry.main_developer.clone()
+                                }
+                            } else {
+                                RawMainDeveloperTree::Tree { name: part_str, children: HashMap::new() }
+                            }
+                        });
+
+                        current = entry;
+                    }
+                    RawMainDeveloperTree::Leaf { .. } => {}
+                }
+            }
         }
 
-        self.net_added_lines as f64 / self.total_net_added_lines as f64
+        root
     }
 }

@@ -14,6 +14,7 @@ import {ModulesBreakdownType, ModulesView} from "./views/modules";
 import {HomeView} from "./views/home";
 import axios from "axios";
 import {MainDeveloperView} from "./views/mainDeveloper";
+import {MainDeveloperStructureView} from "./views/mainDeveloperStructure";
 
 interface ApplicationMainProps {
 
@@ -148,10 +149,14 @@ class ApplicationMain extends React.Component<ApplicationMainProps, ApplicationM
                             </li>
 
                             <li className="nav-item">
-                                <RenderLink to="/main-developer">
-                                    <i className="fa-regular fa-user" />
+                                <RenderDualLink
+                                    to1={"/main-developer"}
+                                    to2={"/main-developer-structure"}
+                                    secondaryLink={<i className="fa-solid fa-sitemap"/>}
+                                >
+                                    <i className="fa-regular fa-user"/>
                                     Main developer
-                                </RenderLink>
+                                </RenderDualLink>
                             </li>
                         </ul>
 
@@ -200,6 +205,9 @@ class ApplicationMain extends React.Component<ApplicationMainProps, ApplicationM
                     </Route>
                     <Route path="/main-developer">
                         <RenderMainDeveloperView self={this} />
+                    </Route>
+                    <Route path="/main-developer-structure">
+                        <RenderMainDeveloperStructureView self={this} />
                     </Route>
                     <Route path="/">
                         <HomeView onError={error => { this.setError(error); }} />
@@ -295,6 +303,14 @@ function RenderMainDeveloperView({ self }: { self: ApplicationMain }) {
     return (
         <MainDeveloperView
             initialEntryType={getEntryType(useLocation().hash)}
+            onError={error => { self.setError(error); }}
+        />
+    );
+}
+
+function RenderMainDeveloperStructureView({ self }: { self: ApplicationMain }) {
+    return (
+        <MainDeveloperStructureView
             onError={error => { self.setError(error); }}
         />
     );

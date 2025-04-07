@@ -116,6 +116,7 @@ export function HistogramChart({ data, max, label, normalized }: { data: Map<str
     useEffect(
         () => {
             d3.select(gy.current)
+                .call(g => g.select("text").remove())
                 // @ts-ignore
                 .call(d3.axisLeft(y).ticks(height / 40))
                 .call(g => g.select(".domain").remove())
@@ -127,7 +128,7 @@ export function HistogramChart({ data, max, label, normalized }: { data: Map<str
                     .text(normalized ? `↑ Percentage of ${label}` : `↑ Number of ${label}`)
                 )
         },
-        [gy, y]
+        [gy, y, label]
     );
 
     return (

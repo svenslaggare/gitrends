@@ -294,6 +294,7 @@ function RenderChangeCouplingStructureView({ self }: { self: ApplicationMain }) 
 function RenderMainDeveloperView({ self }: { self: ApplicationMain }) {
     return (
         <MainDeveloperView
+            initialEntryType={getEntryType(useLocation().hash)}
             onError={error => { self.setError(error); }}
         />
     );

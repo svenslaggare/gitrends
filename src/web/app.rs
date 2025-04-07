@@ -71,12 +71,13 @@ pub async fn main(config: WebAppConfig) {
         .route("/api/file/change-coupling", get(get_file_change_coupling))
         .route("/api/file/change-coupling-structure", get(get_file_change_coupling_structure))
         .route("/api/file/history/{*file_name}", get(get_file_history))
-        .route("/api/file/main-developer", get(get_main_developer))
+        .route("/api/file/main-developer", get(get_files_main_developer))
 
         .route("/api/module", get(get_modules))
         .route("/api/module/hotspots", get(get_module_hotspots))
         .route("/api/module/change-coupling", get(get_module_change_coupling))
         .route("/api/module/change-coupling-structure", get(get_module_change_coupling_structure))
+        .route("/api/module/main-developer", get(get_modules_main_developer))
 
         .with_state(state.clone())
         ;
@@ -284,12 +285,12 @@ async fn get_file_history(
     Ok(Json(repository_querying.file_history(&file_name).await?))
 }
 
-async fn get_main_developer(
+async fn get_files_main_developer(
     State(state): State<Arc<WebAppState>>
 ) -> WebAppResult<impl IntoResponse> {
     let repository_querying = state.repository_querying.load();
 
-    Ok(Json(repository_querying.main_developer().await?))
+    Ok(Json(repository_querying.files_main_developer().await?))
 }
 
 async fn get_modules(
@@ -339,6 +340,13 @@ async fn get_module_change_coupling_structure(
     Ok(Json(change_coupling_tree))
 }
 
+async fn get_modules_main_developer(
+    State(state): State<Arc<WebAppState>>
+) -> WebAppResult<impl IntoResponse> {
+    let repository_querying = state.repository_querying.load();
+
+    Ok(Json(repository_querying.modules_main_developer().await?))
+}
 
 #[derive(Template)]
 #[template(path="gitrends.html")]

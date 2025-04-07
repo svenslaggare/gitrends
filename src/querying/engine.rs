@@ -160,6 +160,32 @@ impl RepositoryQuerying {
             "#
         ).await?;
 
+        ctx.sql(
+            r#"
+            CREATE VIEW file_developers AS
+            SELECT
+                file_name,
+                normalize_author(author) AS author,
+                SUM(GREATEST(added_lines - removed_lines, 0)) AS net_added_lines
+            FROM git_file_entries
+            INNER JOIN
+                git_log ON git_log.revision = git_file_entries.revision
+            GROUP BY file_name, normalize_author(author)
+            "#
+        ).await?;
+
+        ctx.sql(
+            r#"
+            CREATE VIEW module_developers AS
+            SELECT
+                extract_module_name(file_name) AS module_name,
+                author,
+                SUM(net_added_lines) AS net_added_lines
+            FROM file_developers
+            GROUP BY extract_module_name(file_name), author
+            "#
+        ).await?;
+
         Ok(RepositoryQuerying { data_directory: data_directory.to_owned(), ctx })
     }
 
@@ -649,7 +675,7 @@ impl RepositoryQuerying {
         Ok(entries)
     }
 
-    pub async fn main_developer(&self) -> QueryingResult<Vec<MainDeveloperEntry>> {
+    pub async fn files_main_developer(&self) -> QueryingResult<Vec<MainDeveloperEntry>> {
         let result_df = self.ctx
             .sql(
                 r#"
@@ -658,16 +684,7 @@ impl RepositoryQuerying {
                     SUM(net_added_lines) AS total_net_added_lines,
                     LAST_VALUE(author ORDER BY net_added_lines, author) AS main_developer,
                     LAST_VALUE(net_added_lines ORDER BY net_added_lines, author) AS main_developer_net_added_lines
-                FROM (
-                    SELECT
-                        file_name,
-                        normalize_author(author) AS author,
-                        SUM(GREATEST(added_lines - removed_lines, 0)) AS net_added_lines
-                    FROM git_file_entries
-                    INNER JOIN
-                        git_log ON git_log.revision = git_file_entries.revision
-                    GROUP BY file_name, normalize_author(author)
-                ) AS nested
+                FROM file_developers
                 GROUP BY file_name
                 ORDER BY
                     CASE
@@ -684,19 +701,40 @@ impl RepositoryQuerying {
             result_df.collect().await?,
             4,
             |columns, row_index| {
-                let file_name = columns[0].as_string_view().value(row_index).to_owned();
-                let total_net_added_lines = columns[1].as_primitive::<Int64Type>().value(row_index);
-                let main_developer = columns[2].as_string_view().value(row_index).to_owned();
-                let net_added_lines = columns[3].as_primitive::<Int64Type>().value(row_index);
+                main_developer_entries.push(MainDeveloperEntry::from_row(columns, row_index, 0));
+            }
+        );
 
-                main_developer_entries.push(
-                    MainDeveloperEntry {
-                        name: file_name,
-                        main_developer,
-                        net_added_lines,
-                        total_net_added_lines
-                    }
-                );
+        Ok(main_developer_entries)
+    }
+
+    pub async fn modules_main_developer(&self) -> QueryingResult<Vec<MainDeveloperEntry>> {
+        let result_df = self.ctx
+            .sql(
+                r#"
+                SELECT
+                    module_name,
+                    SUM(net_added_lines) AS total_net_added_lines,
+                    LAST_VALUE(author ORDER BY net_added_lines, author) AS main_developer,
+                    LAST_VALUE(net_added_lines ORDER BY net_added_lines, author) AS main_developer_net_added_lines
+                FROM module_developers
+                GROUP BY module_name
+                ORDER BY
+                    CASE
+                        WHEN total_net_added_lines > 0 THEN (main_developer_net_added_lines::real / total_net_added_lines::real)
+                        ELSE 0.0
+                    END
+                    DESC
+                "#
+            )
+            .await?;
+
+        let mut main_developer_entries = Vec::new();
+        yield_rows(
+            result_df.collect().await?,
+            4,
+            |columns, row_index| {
+                main_developer_entries.push(MainDeveloperEntry::from_row(columns, row_index, 0));
             }
         );
 
@@ -801,6 +839,22 @@ impl FileHistoryEntry {
             total_indent_levels: columns[base_column_index + 6].as_primitive::<UInt64Type>().value(row_index),
             avg_indent_levels: columns[base_column_index + 7].as_primitive::<Float64Type>().value(row_index),
             std_indent_level: columns[base_column_index + 8].as_primitive::<Float64Type>().value(row_index)
+        }
+    }
+}
+
+impl MainDeveloperEntry {
+    pub fn from_row(columns: &[&ArrayRef], row_index: usize, base_column_index: usize) -> MainDeveloperEntry {
+        let name = columns[base_column_index].as_string_view().value(row_index).to_owned();
+        let total_net_added_lines = columns[base_column_index + 1].as_primitive::<Int64Type>().value(row_index);
+        let main_developer = columns[base_column_index + 2].as_string_view().value(row_index).to_owned();
+        let net_added_lines = columns[base_column_index + 3].as_primitive::<Int64Type>().value(row_index);
+
+        MainDeveloperEntry {
+            name,
+            main_developer,
+            net_added_lines,
+            total_net_added_lines
         }
     }
 }

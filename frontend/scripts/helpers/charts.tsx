@@ -81,3 +81,89 @@ export function CodeComplexityTimeChart({ data }: { data: FileHistoryEntry[] }) 
         </svg>
     );
 }
+
+export function HistogramChart({ data, max, label, normalized }: { data: Map<string, number>; max: number; label: string; normalized: boolean }) {
+    let width = 1600;
+    let height = 600;
+
+    let marginTop = 30;
+    let marginRight = 60;
+    let marginBottom = 30;
+    let marginLeft = 60;
+    let binWidth = 20;
+
+    const gy = useRef();
+
+    let orderedData = Array.from(data.entries());
+
+    if (normalized) {
+        let total = d3.sum(orderedData, d => d[1]);
+        orderedData = orderedData.map(([name, value]) => [name, Math.round(100.0 * (value / total) * 10) / 10.0]);
+    }
+
+    orderedData.sort((a, b) => -(a[1] - b[1]));
+
+    orderedData = orderedData.slice(0, Math.min(max, orderedData.length));
+
+    const x = d3.scaleLinear()
+        .domain([0, max])
+        .range([marginLeft, width - marginRight]);
+
+    const y = d3.scaleLinear()
+        .domain([0, d3.max(orderedData, d => d[1])])
+        .range([height - marginBottom, marginTop]);
+
+    useEffect(
+        () => {
+            d3.select(gy.current)
+                // @ts-ignore
+                .call(d3.axisLeft(y).ticks(height / 40))
+                .call(g => g.select(".domain").remove())
+                .call(g => g.append("text")
+                    .attr("x", -marginLeft)
+                    .attr("y", 10)
+                    .attr("fill", "currentColor")
+                    .attr("text-anchor", "start")
+                    .text(normalized ? `↑ Percentage of ${label}` : `↑ Number of ${label}`)
+                )
+        },
+        [gy, y]
+    );
+
+    return (
+        <svg width={width} height={height}>
+            <g ref={gy} transform={`translate(${marginLeft},0)`} />
+
+            <g fill="steelblue">
+                {
+                    orderedData.map(([name, value], valueIndex) =>
+                        <rect
+                            key={valueIndex}
+                            x={x(valueIndex)}
+                            y={y(value)}
+                            width={binWidth}
+                            height={y(0) - y(value)}
+                        >
+                            <title>{name}: {value}{normalized ? " %" : ""}</title>
+                        </rect>
+                    )
+                }
+            </g>
+            <g>
+                {
+                    orderedData.map(([name, _], valueIndex) =>
+                        <text
+                            className="bar-chart-text"
+                            key={valueIndex}
+                            x={x(valueIndex) + binWidth / 2.0}
+                            y={y(0) + 20}
+                            fill="white"
+                        >
+                            {name}
+                        </text>
+                    )
+                }
+            </g>
+        </svg>
+    );
+}

@@ -118,3 +118,7 @@
 .switcher-dropdown {
     float: right;
 }
+
+.bar-chart-text {
+    text-anchor: middle;
+}

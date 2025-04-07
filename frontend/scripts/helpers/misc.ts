@@ -11,3 +11,12 @@ export function getErrorMessage(error: any) {
         return "Failed to send request.";
     }
 }
+
+export function shortenName(name: string) {
+    let parts = name.split(" ");
+    if (parts.length > 1) {
+        return `${parts[0][0]}. ${parts[parts.length - 1]}`
+    } else {
+        return name;
+    }
+}

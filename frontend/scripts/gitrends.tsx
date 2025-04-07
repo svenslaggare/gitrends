@@ -13,6 +13,7 @@ import {ChangeCouplingStructureView} from "./views/changeCouplingStructure";
 import {ModulesBreakdownType, ModulesView} from "./views/modules";
 import {HomeView} from "./views/home";
 import axios from "axios";
+import {MainDeveloperView} from "./views/mainDeveloper";
 
 interface ApplicationMainProps {
 
@@ -145,6 +146,13 @@ class ApplicationMain extends React.Component<ApplicationMainProps, ApplicationM
                                     Change coupling
                                 </RenderDualLink>
                             </li>
+
+                            <li className="nav-item">
+                                <RenderLink to="/main-developer">
+                                    <i className="fa-regular fa-user" />
+                                    Main developer
+                                </RenderLink>
+                            </li>
                         </ul>
 
                         {/*<hr className="my-3"/>*/}
@@ -189,6 +197,9 @@ class ApplicationMain extends React.Component<ApplicationMainProps, ApplicationM
                     </Route>
                     <Route path="/change-coupling-structure">
                         <RenderChangeCouplingStructureView self={this} />
+                    </Route>
+                    <Route path="/main-developer">
+                        <RenderMainDeveloperView self={this} />
                     </Route>
                     <Route path="/">
                         <HomeView onError={error => { this.setError(error); }} />
@@ -275,6 +286,14 @@ function RenderChangeCouplingStructureView({ self }: { self: ApplicationMain }) 
     return (
         <ChangeCouplingStructureView
             initialEntryType={getEntryType(useLocation().hash)}
+            onError={error => { self.setError(error); }}
+        />
+    );
+}
+
+function RenderMainDeveloperView({ self }: { self: ApplicationMain }) {
+    return (
+        <MainDeveloperView
             onError={error => { self.setError(error); }}
         />
     );

@@ -37,7 +37,7 @@ export function TypeSwitcher<T>({ types, current, onChange }: { types: Map<T, Ty
             <ul className="dropdown-menu">
                 {
                     Array.from(types.entries()).map(([type, entry]) =>
-                        <li>
+                        <li key={entry.name}>
                             <a className="dropdown-item" href={`#${entry.name}`} onClick={() => { onChange(type) }}>
                                 {iconForType(type)} {entry.display}
                             </a>

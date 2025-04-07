@@ -102,3 +102,10 @@ export interface GitLogEntry {
     author: string;
     commit_message: string;
 }
+
+export interface MainDeveloperEntry {
+    name: string;
+    main_developer: string;
+    net_added_lines: number;
+    total_net_added_lines: number;
+}

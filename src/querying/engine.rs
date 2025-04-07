@@ -656,8 +656,8 @@ impl RepositoryQuerying {
                 SELECT
                     file_name,
                     SUM(net_added_lines) AS total_net_added_lines,
-                    LAST_VALUE(author ORDER BY net_added_lines) AS main_developer,
-                    LAST_VALUE(net_added_lines ORDER BY net_added_lines) AS main_developer_net_added_lines
+                    LAST_VALUE(author ORDER BY net_added_lines, author) AS main_developer,
+                    LAST_VALUE(net_added_lines ORDER BY net_added_lines, author) AS main_developer_net_added_lines
                 FROM (
                     SELECT
                         file_name,

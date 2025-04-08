@@ -88,7 +88,7 @@ interface StructureChartProps {
 }
 
 function StructureChart({ mainDeveloper, onFileSelect }: StructureChartProps) {
-    let margin = 20;
+    let margin = 30;
     let outerDiameter = 900;
     let innerDiameter = outerDiameter - margin - margin;
 

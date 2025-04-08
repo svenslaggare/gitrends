@@ -70,7 +70,7 @@ export class MainDeveloperView extends React.Component<MainDeveloperViewProps, M
                     normalized={true}
                 />
 
-                <h3 style={{ marginTop: "3em" }}>{capitalize(this.entryTypeName())}s with highest singular ownership</h3>
+                <h3 style={{ marginTop: "1em" }}>{capitalize(this.entryTypeName())}s with highest singular ownership</h3>
 
                 <Table
                     columns={[

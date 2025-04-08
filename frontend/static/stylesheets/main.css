@@ -120,5 +120,15 @@
 }
 
 .bar-chart-text {
-    text-anchor: middle;
+    text-anchor: start;
+}
+
+.bar-chart-value-text {
+    text-anchor: end;
+    fill: white;
+}
+
+.bar-chart-value-text-short {
+    text-anchor: start;
+    fill: white;
 }

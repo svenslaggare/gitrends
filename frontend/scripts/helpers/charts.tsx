@@ -83,22 +83,22 @@ export function CodeComplexityTimeChart({ data }: { data: FileHistoryEntry[] }) 
 }
 
 export function HistogramChart({ data, max, label, normalized }: { data: Map<string, number>; max: number; label: string; normalized: boolean }) {
-    let width = 1600;
+    let width = 1200;
     let height = 600;
 
     let marginTop = 30;
     let marginRight = 60;
     let marginBottom = 30;
-    let marginLeft = 60;
-    let binWidth = 40;
+    let marginLeft = 140;
 
+    const gx = useRef();
     const gy = useRef();
 
     let orderedData = Array.from(data.entries());
 
     if (normalized) {
         let total = d3.sum(orderedData, d => d[1]);
-        orderedData = orderedData.map(([name, value]) => [name, Math.round(100.0 * (value / total) * 10) / 10.0]);
+        orderedData = orderedData.map(([name, value]) => [name, value / total]);
     }
 
     orderedData.sort((a, b) => -(a[1] - b[1]));
@@ -106,33 +106,40 @@ export function HistogramChart({ data, max, label, normalized }: { data: Map<str
     orderedData = orderedData.slice(0, Math.min(max, orderedData.length));
 
     const x = d3.scaleLinear()
-        .domain([0, max])
+        .domain([0, d3.max(orderedData, d => d[1])])
         .range([marginLeft, width - marginRight]);
 
-    const y = d3.scaleLinear()
-        .domain([0, d3.max(orderedData, d => d[1])])
-        .range([height - marginBottom, marginTop]);
+    const y = d3.scaleBand()
+        .domain(orderedData.map(d => d[0]))
+        .rangeRound([marginTop, height - marginBottom])
+        .padding(0.1);
+
+    let shortLimit = orderedData.length > 0 ? 0.05 * orderedData[0][1] : 0.0;
+
+    useEffect(
+        () => {
+            d3.select(gx.current)
+                .call(g => g.select("text").remove())
+                // @ts-ignore
+                .call(d3.axisTop(x).ticks(width / 80, normalized ? "%" : ""))
+                .call(g => g.select(".domain").remove())
+        },
+        [gx, x]
+    );
 
     useEffect(
         () => {
             d3.select(gy.current)
                 .call(g => g.select("text").remove())
                 // @ts-ignore
-                .call(d3.axisLeft(y).ticks(height / 40))
-                .call(g => g.select(".domain").remove())
-                .call(g => g.append("text")
-                    .attr("x", -marginLeft)
-                    .attr("y", 10)
-                    .attr("fill", "currentColor")
-                    .attr("text-anchor", "start")
-                    .text(normalized ? `↑ Percentage of ${label}` : `↑ Number of ${label}`)
-                )
+                .call(d3.axisLeft(y).tickSizeOuter(0))
         },
-        [gy, y, label]
+        [gy, y]
     );
 
     return (
         <svg width={width} height={height}>
+            <g ref={gx} transform={`translate(0,${marginTop})`} />
             <g ref={gy} transform={`translate(${marginLeft},0)`} />
 
             <g fill="steelblue">
@@ -140,31 +147,33 @@ export function HistogramChart({ data, max, label, normalized }: { data: Map<str
                     orderedData.map(([name, value], valueIndex) =>
                         <rect
                             key={valueIndex}
-                            x={x(valueIndex)}
-                            y={y(value)}
-                            width={binWidth}
-                            height={y(0) - y(value)}
-                        >
-                            <title>{name}: {value}{normalized ? " %" : ""}</title>
-                        </rect>
+                            x={x(0)}
+                            y={y(name)}
+                            width={x(value) - x(0)}
+                            height={y.bandwidth()}
+                        />
                     )
                 }
             </g>
-            <g>
-                {
-                    orderedData.map(([name, _], valueIndex) =>
+
+            {
+                orderedData.map(([name, value], valueIndex) => {
+                    let isShort = value <= shortLimit;
+
+                    return (
                         <text
-                            className="bar-chart-text"
                             key={valueIndex}
-                            x={x(valueIndex) + binWidth / 2.0}
-                            y={y(0) + 20}
-                            fill="white"
+                            className={isShort ? "bar-chart-value-text-short" : "bar-chart-value-text"}
+                            x={x(value)}
+                            y={y(name) + y.bandwidth() / 2.0}
+                            dx={isShort ? 4 : -4}
+                            dy={"0.35em"}
                         >
-                            {name}
+                            {normalized ? `${(value * 100.0).toFixed(1)} %` : value}
                         </text>
-                    )
-                }
-            </g>
+                    );
+                })
+            }
         </svg>
     );
 }

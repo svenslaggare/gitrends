@@ -191,7 +191,11 @@ impl RepositoryQuerying {
 
     pub async fn summary(&self) -> QueryingResult<RepositorySummary> {
         let mut result = RepositorySummary {
-            data_directory: self.data_directory.to_str().unwrap().to_owned(),
+            data_directory: self.data_directory
+                .components()
+                .last()
+                .map(|x| x.as_os_str().to_str()).flatten()
+                .unwrap_or("N/A").to_owned(),
 
             num_revisions: 0,
             first_commit: None,
@@ -271,19 +275,7 @@ impl RepositoryQuerying {
             ORDER BY num_revisions DESC LIMIT 10
             "#
         ).await?;
-
-        yield_rows(
-            result_df.collect().await?,
-            2,
-            |columns, row_index| {
-                result.top_authors.push(
-                    Author {
-                        name: columns[0].as_string_view().value(row_index).to_owned(),
-                        num_revisions: columns[1].as_primitive::<Int64Type>().value(row_index) as u64
-                    }
-                );
-            }
-        );
+        collect_rows_into(result_df, &mut result.top_authors).await?;
 
         let result_df = self.ctx
             .sql(
@@ -305,14 +297,7 @@ impl RepositoryQuerying {
                 "#
             )
             .await?;
-
-        yield_rows(
-            result_df.collect().await?,
-            9,
-            |columns, row_index| {
-                result.last_changed_files.push(FileHistoryEntry::from_row(columns, row_index, 0));
-            }
-        );
+        collect_rows_into::<FileHistoryEntry>(result_df, &mut result.last_changed_files).await?;
 
         let result_df = self.ctx
             .sql(
@@ -332,14 +317,7 @@ impl RepositoryQuerying {
                 "#
             )
             .await?;
-
-        yield_rows(
-            result_df.collect().await?,
-            7,
-            |columns, row_index| {
-                result.top_code_files.push(FileEntry::from_row(columns, row_index, 0));
-            }
-        );
+        collect_rows_into::<FileEntry>(result_df, &mut result.top_code_files).await?;
 
         Ok(result)
     }
@@ -354,16 +332,7 @@ impl RepositoryQuerying {
             "#
         ).await?;
 
-        let mut entries = Vec::new();
-        yield_rows(
-            result_df.collect().await?,
-            4,
-            |columns, row_index| {
-                entries.push(GitLogEntry::from_row(columns, row_index, 0));
-            }
-        );
-
-        Ok(entries)
+        collect_rows::<GitLogEntry>(result_df).await
     }
 
     pub async fn files(&self) -> QueryingResult<Vec<FileEntry>> {
@@ -383,16 +352,7 @@ impl RepositoryQuerying {
             "#
         ).await?;
 
-        let mut files = Vec::new();
-        yield_rows(
-            result_df.collect().await?,
-            7,
-            |columns, row_index| {
-                files.push(FileEntry::from_row(columns, row_index, 0));
-            }
-        );
-
-        Ok(files)
+        collect_rows::<FileEntry>(result_df).await
     }
 
     pub async fn modules(&self) -> QueryingResult<Vec<Module>> {
@@ -442,7 +402,7 @@ impl RepositoryQuerying {
 
         let result_df = add_optional_limit(result_df, count)?;
 
-        self.create_hotspots_results(result_df).await
+        collect_rows::<Hotspot>(result_df).await
     }
 
     pub async fn module_hotspots(&self, count: Option<usize>) -> QueryingResult<Vec<Hotspot>> {
@@ -457,28 +417,7 @@ impl RepositoryQuerying {
 
         let result_df = add_optional_limit(result_df, count)?;
 
-        self.create_hotspots_results(result_df).await
-    }
-
-    async fn create_hotspots_results(&self, result_df: DataFrame) -> QueryingResult<Vec<Hotspot>> {
-        let mut hotspots = Vec::new();
-        yield_rows(
-            result_df.collect().await?,
-            5,
-            |columns, row_index| {
-                hotspots.push(
-                    Hotspot {
-                        name: columns[0].as_string_view().value(row_index).to_owned(),
-                        num_revisions: columns[1].as_primitive::<Int64Type>().value(row_index) as u64,
-                        num_authors: columns[2].as_primitive::<Int64Type>().value(row_index) as u64,
-                        num_code_lines: columns[3].as_primitive::<UInt64Type>().value(row_index),
-                        total_indent_levels: columns[4].as_primitive::<UInt64Type>().value(row_index)
-                    }
-                );
-            }
-        );
-
-        Ok(hotspots)
+        collect_rows::<Hotspot>(result_df).await
     }
 
     pub async fn change_couplings(&self, count: Option<usize>) -> QueryingResult<Vec<ChangeCoupling>> {
@@ -663,16 +602,7 @@ impl RepositoryQuerying {
             .await?
             .with_param_values(vec![ScalarValue::Utf8(Some(file_name.to_owned()))])?;
 
-        let mut entries = Vec::new();
-        yield_rows(
-            result_df.collect().await?,
-            9,
-            |columns, row_index| {
-                entries.push(FileHistoryEntry::from_row(columns, row_index, 0));
-            }
-        );
-
-        Ok(entries)
+        collect_rows::<FileHistoryEntry>(result_df).await
     }
 
     pub async fn files_main_developer(&self) -> QueryingResult<Vec<MainDeveloperEntry>> {
@@ -696,16 +626,7 @@ impl RepositoryQuerying {
             )
             .await?;
 
-        let mut main_developer_entries = Vec::new();
-        yield_rows(
-            result_df.collect().await?,
-            4,
-            |columns, row_index| {
-                main_developer_entries.push(MainDeveloperEntry::from_row(columns, row_index, 0));
-            }
-        );
-
-        Ok(main_developer_entries)
+        collect_rows::<MainDeveloperEntry>(result_df).await
     }
 
     pub async fn modules_main_developer(&self) -> QueryingResult<Vec<MainDeveloperEntry>> {
@@ -729,16 +650,7 @@ impl RepositoryQuerying {
             )
             .await?;
 
-        let mut main_developer_entries = Vec::new();
-        yield_rows(
-            result_df.collect().await?,
-            4,
-            |columns, row_index| {
-                main_developer_entries.push(MainDeveloperEntry::from_row(columns, row_index, 0));
-            }
-        );
-
-        Ok(main_developer_entries)
+        collect_rows::<MainDeveloperEntry>(result_df).await
     }
 
     async fn get_num_file_revisions(&self) -> QueryingResult<HashMap<String, u64>> {
@@ -798,8 +710,44 @@ fn add_optional_limit(result_df: DataFrame, count: Option<usize>) -> Result<Data
     }
 }
 
-impl GitLogEntry {
-    pub fn from_row(columns: &[&ArrayRef], row_index: usize, base_column_index: usize) -> GitLogEntry {
+trait FromRow {
+    const NUM_COLUMNS: usize;
+    fn from_row(result_columns: &[&ArrayRef], row_index: usize, base_column_index: usize) -> Self;
+}
+
+async fn collect_rows<T: FromRow>(result_df: DataFrame) -> QueryingResult<Vec<T>> {
+    let mut entries = Vec::new();
+    collect_rows_into(result_df, &mut entries).await?;
+    Ok(entries)
+}
+
+async fn collect_rows_into<T: FromRow>(result_df: DataFrame, entries: &mut Vec<T>) -> QueryingResult<()> {
+    yield_rows(
+        result_df.collect().await?,
+        T::NUM_COLUMNS,
+        |columns, row_index| {
+            entries.push(T::from_row(columns, row_index, 0));
+        }
+    );
+
+    Ok(())
+}
+
+impl FromRow for Author {
+    const NUM_COLUMNS: usize = 2;
+
+    fn from_row(columns: &[&ArrayRef], row_index: usize, base_column_index: usize) -> Author {
+        Author {
+            name: columns[base_column_index].as_string_view().value(row_index).to_owned(),
+            num_revisions: columns[base_column_index + 1].as_primitive::<Int64Type>().value(row_index) as u64
+        }
+    }
+}
+
+impl FromRow for GitLogEntry {
+    const NUM_COLUMNS: usize = 4;
+
+    fn from_row(columns: &[&ArrayRef], row_index: usize, base_column_index: usize) -> GitLogEntry {
         GitLogEntry {
             revision: columns[base_column_index].as_string_view().value(row_index).to_owned(),
             date: columns[base_column_index + 1].as_primitive::<Int64Type>().value(row_index),
@@ -809,8 +757,10 @@ impl GitLogEntry {
     }
 }
 
-impl FileEntry {
-    pub fn from_row(columns: &[&ArrayRef], row_index: usize, base_column_index: usize) -> FileEntry {
+impl FromRow for FileEntry {
+    const NUM_COLUMNS: usize = 7;
+
+    fn from_row(columns: &[&ArrayRef], row_index: usize, base_column_index: usize) -> FileEntry {
         FileEntry {
             name: columns[base_column_index].as_string_view().value(row_index).to_owned(),
 
@@ -825,8 +775,10 @@ impl FileEntry {
     }
 }
 
-impl FileHistoryEntry {
-    pub fn from_row(columns: &[&ArrayRef], row_index: usize, base_column_index: usize) -> FileHistoryEntry {
+impl FromRow for FileHistoryEntry {
+    const NUM_COLUMNS: usize = 9;
+
+    fn from_row(columns: &[&ArrayRef], row_index: usize, base_column_index: usize) -> FileHistoryEntry {
         FileHistoryEntry {
             name: columns[base_column_index].as_string_view().value(row_index).to_owned(),
             revision: columns[base_column_index + 1].as_string_view().value(row_index).to_owned(),
@@ -843,8 +795,24 @@ impl FileHistoryEntry {
     }
 }
 
-impl MainDeveloperEntry {
-    pub fn from_row(columns: &[&ArrayRef], row_index: usize, base_column_index: usize) -> MainDeveloperEntry {
+impl FromRow for Hotspot {
+    const NUM_COLUMNS: usize = 5;
+
+    fn from_row(columns: &[&ArrayRef], row_index: usize, base_column_index: usize) -> Hotspot {
+        Hotspot {
+            name: columns[base_column_index].as_string_view().value(row_index).to_owned(),
+            num_revisions: columns[base_column_index + 1].as_primitive::<Int64Type>().value(row_index) as u64,
+            num_authors: columns[base_column_index + 2].as_primitive::<Int64Type>().value(row_index) as u64,
+            num_code_lines: columns[base_column_index + 3].as_primitive::<UInt64Type>().value(row_index),
+            total_indent_levels: columns[base_column_index + 4].as_primitive::<UInt64Type>().value(row_index)
+        }
+    }
+}
+
+impl FromRow for MainDeveloperEntry {
+    const NUM_COLUMNS: usize = 4;
+
+    fn from_row(columns: &[&ArrayRef], row_index: usize, base_column_index: usize) -> MainDeveloperEntry {
         let name = columns[base_column_index].as_string_view().value(row_index).to_owned();
         let total_net_added_lines = columns[base_column_index + 1].as_primitive::<Int64Type>().value(row_index);
         let main_developer = columns[base_column_index + 2].as_string_view().value(row_index).to_owned();

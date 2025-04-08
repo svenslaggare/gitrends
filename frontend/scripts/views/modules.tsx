@@ -173,7 +173,7 @@ function StructureChart({ breakdownType, modules }: { breakdownType: ModulesBrea
                                 <rect
                                     id={leafId}
                                     fill={color(colorNode.data.name)}
-                                    fillOpacity={0.6}
+                                    fillOpacity={0.8}
                                     width={node.x1 - node.x0}
                                     height={node.y1 - node.y0}
                                 />

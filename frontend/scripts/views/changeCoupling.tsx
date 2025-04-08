@@ -1,7 +1,7 @@
 import React from "react";
 import axios from "axios";
 
-import {ChangeCoupling} from "../model";
+import {ChangeCoupling, changeCouplingTableRow} from "../model";
 import {EntryType, EntryTypeSwitcher, Table} from "../helpers/view";
 import {OnError} from "../helpers/misc";
 import {ShowSelectedFileModal} from "../helpers/selectedFileModal";
@@ -107,17 +107,7 @@ export class ChangeCouplingView extends React.Component<ChangeCouplingViewProps,
                         {name: "coupling_ratio", display: "Amount of coupling (%)", clickable: false}
                     ]}
                     rows={changeCoupling}
-                    extractColumn={(row: ChangeCoupling, name) => {
-                        let averageRevisions = Math.ceil((row.num_left_revisions + row.num_right_revisions) / 2.0);
-                        switch (name) {
-                            case "average_revisions":
-                                return averageRevisions;
-                            case "coupling_ratio":
-                                return Math.round((100.0 * (row.coupled_revisions / averageRevisions)) * 10.0) / 10.0;
-                            default:
-                                return row[name];
-                        }
-                    }}
+                    extractColumn={(row: ChangeCoupling, name: string) => changeCouplingTableRow(row, name)}
                     onValueClick={(rowIndex, column) => {
                         switch (column) {
                             case "left_name":

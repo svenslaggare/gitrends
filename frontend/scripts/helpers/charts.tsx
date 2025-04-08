@@ -82,7 +82,7 @@ export function CodeComplexityTimeChart({ data }: { data: FileHistoryEntry[] }) 
     );
 }
 
-export function HistogramChart({ data, max, label, normalized }: { data: Map<string, number>; max: number; label: string; normalized: boolean }) {
+export function HistogramChart({ data, max, normalized }: { data: Map<string, number>; max: number; normalized: boolean }) {
     let width = 1200;
     let height = 600;
 
@@ -184,7 +184,7 @@ export function EntryLegend({ x, y, values, color }: { x: number; y: number; val
             {
                 values.map((value, valueIndex) =>
                     [
-                        <tspan key={valueIndex * 2} fill={color(value)} fontSize="16px">■ </tspan>,
+                        <tspan key={valueIndex * 2} fill={color(value)} fontSize="20px">■ </tspan>,
                         <tspan key={valueIndex * 2 + 1} fill="white">{value} </tspan>
                     ]
                 )
@@ -192,3 +192,8 @@ export function EntryLegend({ x, y, values, color }: { x: number; y: number; val
         </text>
     );
 }
+
+export const CIRCLE_PACKING_COLOR = d3.scaleLinear<string>()
+    .domain([-1, 5])
+    .range(["hsl(185,60%,99%)", "hsl(187,40%,70%)"])
+    .interpolate(d3.interpolateHcl);

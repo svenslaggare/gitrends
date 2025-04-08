@@ -5,7 +5,7 @@ import axios from "axios";
 
 import {OnError, shortenName} from "../helpers/misc";
 import {ShowSelectedFileModal} from "../helpers/selectedFileModal";
-import {EntryLegend} from "../helpers/charts";
+import {CIRCLE_PACKING_COLOR, EntryLegend} from "../helpers/charts";
 
 interface MainDeveloperStructureViewProps {
     onError: OnError;
@@ -126,7 +126,7 @@ function StructureChart({ mainDeveloper, onFileSelect }: StructureChartProps) {
         .range([0, innerDiameter])
         .domain([focusY - focusRadius, focusY + focusRadius]);
 
-    let width = outerDiameter;
+    let width = outerDiameter + 150;
     let height = outerDiameter;
 
     let descendants = rootNode.descendants();
@@ -146,10 +146,7 @@ function StructureChart({ mainDeveloper, onFileSelect }: StructureChartProps) {
     let developersSet = new Set<string>(developers);
     let developerColor = d3.scaleOrdinal(developers, d3.schemeTableau10);
 
-    let depthColor = d3.scaleLinear<string>()
-        .domain([-1, 5])
-        .range(["hsl(185,60%,99%)", "hsl(187,40%,70%)"])
-        .interpolate(d3.interpolateHcl);
+    let depthColor = CIRCLE_PACKING_COLOR;
 
     function getColor(node: Node) {
         if (node.children) {
@@ -165,7 +162,7 @@ function StructureChart({ mainDeveloper, onFileSelect }: StructureChartProps) {
     }
 
     return (
-        <svg width={width + 500} height={height}>
+        <svg width={width} height={height}>
             <EntryLegend
                 x={0}
                 y={20}

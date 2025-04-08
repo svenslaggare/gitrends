@@ -6,6 +6,7 @@ import axios from "axios";
 import {OnError} from "../helpers/misc";
 import {ShowSelectedFileModal} from "../helpers/selectedFileModal";
 import {TypeSwitcher} from "../helpers/view";
+import {CIRCLE_PACKING_COLOR} from "../helpers/charts";
 
 export enum HotspotAnalysisType {
     Revision,
@@ -114,10 +115,7 @@ function StructureChart({ analysisType, hotspotTree, onFileSelect }: StructureCh
     let outerDiameter = 900;
     let innerDiameter = outerDiameter - margin - margin;
 
-    let color = d3.scaleLinear<string>()
-        .domain([-1, 5])
-        .range(["hsl(185,60%,99%)", "hsl(187,40%,70%)"])
-        .interpolate(d3.interpolateHcl);
+    let color = CIRCLE_PACKING_COLOR;
 
     let root = d3.hierarchy(
         hotspotTree,

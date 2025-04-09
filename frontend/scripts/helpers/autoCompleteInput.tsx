@@ -12,7 +12,7 @@ class Completion {
 
     constructor(value: string) {
         this.value = value;
-        this.valueLower = value.toString();
+        this.valueLower = value.toLowerCase();
     }
 
     isMatch(input: string) {
@@ -70,8 +70,60 @@ export class AutoCompleteInput extends React.Component<AutoCompleteProps, AutoCo
                         }}
                         autoComplete="off"
                         onKeyDown={event => {
+                            let completionList = this.completionListRef.current;
+                            let completionListItems = completionList?.children;
+
                             if (event.key == "Enter") {
-                                this.props.onShow(this.state.input);
+                                if (completionList != null) {
+                                    this.setState({
+                                        input: (completionList.querySelector(".active") as HTMLLinkElement).innerText,
+                                        typed: false
+                                    });
+                                } else {
+                                    this.props.onShow(this.state.input);
+                                }
+                            } else if (event.key == "ArrowDown") {
+                                let getFirst = () => {
+                                    return completionListItems[0].querySelector(".dropdown-item");
+                                }
+
+                                let currentFocused = completionList.querySelector(".active");
+                                if (currentFocused == null) {
+                                    getFirst().classList.add("active");
+                                } else {
+                                    currentFocused.classList.remove("active");
+
+                                    let nextFocused = currentFocused.parentElement?.nextElementSibling?.querySelector(".dropdown-item");
+                                    if (nextFocused != null) {
+                                        nextFocused.classList.add("active");
+                                    } else {
+                                        getFirst().classList.add("active");
+                                    }
+                                }
+
+                                event.preventDefault();
+                                event.stopPropagation();
+                            } else if (event.key == "ArrowUp") {
+                                let getLast = () => {
+                                    return completionListItems[completionListItems.length - 1].querySelector(".dropdown-item");
+                                }
+
+                                let currentFocused = completionList.querySelector(".active");
+                                if (currentFocused == null) {
+                                    getLast().classList.add("active");
+                                } else {
+                                    currentFocused.classList.remove("active");
+
+                                    let nextFocused = currentFocused.parentElement?.previousElementSibling?.querySelector(".dropdown-item");
+                                    if (nextFocused != null) {
+                                        nextFocused.classList.add("active");
+                                    } else {
+                                        getLast().classList.add("active");
+                                    }
+                                }
+
+                                event.preventDefault();
+                                event.stopPropagation();
                             }
                         }}
                     />
@@ -116,7 +168,7 @@ export class AutoCompleteInput extends React.Component<AutoCompleteProps, AutoCo
         );
     }
 
-    getCompletions() {
+    getCompletions(): Completion[] {
         if (!this.state.typed) {
             return [];
         }

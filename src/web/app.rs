@@ -235,7 +235,7 @@ async fn get_file_hotspots(
     let repository_querying = state.repository_querying.load();
 
     let count = query.get("count").map(|x| usize::from_str(x).ok()).flatten();
-    Ok(Json(repository_querying.hotspots(count.or(Some(100))).await?))
+    Ok(Json(repository_querying.file_hotspots(count.or(Some(100))).await?))
 }
 
 async fn get_file_hotspots_structure(
@@ -243,7 +243,7 @@ async fn get_file_hotspots_structure(
 ) -> WebAppResult<impl IntoResponse> {
     let repository_querying = state.repository_querying.load();
 
-    let hotspots = repository_querying.hotspots(None).await?;
+    let hotspots = repository_querying.file_hotspots(None).await?;
     let hotspot_tree = HotspotTree::from_vec(&hotspots);
     Ok(Json(hotspot_tree))
 }
@@ -262,7 +262,7 @@ async fn get_file_change_coupling(
             Ok(Json(repository_querying.change_couplings_for_file(file_name, count).await?))
         }
         None => {
-            Ok(Json(repository_querying.change_couplings(count.or(Some(100))).await?))
+            Ok(Json(repository_querying.file_change_couplings(count.or(Some(100))).await?))
         }
     }
 }
@@ -272,7 +272,7 @@ async fn get_file_change_coupling_structure(
 ) -> WebAppResult<impl IntoResponse> {
     let repository_querying = state.repository_querying.load();
 
-    let change_couplings = repository_querying.change_couplings(None).await?;
+    let change_couplings = repository_querying.file_change_couplings(None).await?;
     let change_coupling_tree = ChangeCouplingTree::from_vec(&change_couplings, true, 15, 0.2);
     Ok(Json(change_coupling_tree))
 }

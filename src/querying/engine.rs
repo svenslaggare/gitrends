@@ -122,8 +122,13 @@ impl RepositoryQuerying {
             CREATE VIEW latest_revision_module_entries AS
             SELECT
                 extract_module_name(file_name) AS module_name,
+
                 SUM(num_code_lines) AS num_code_lines,
-                SUM(total_indent_levels) AS total_indent_levels
+                SUM(num_comment_lines) AS num_comment_lines,
+                SUM(num_blank_lines) AS num_blank_lines,
+
+                SUM(total_indent_levels) AS total_indent_levels,
+                SUM(total_indent_levels) / SUM(num_code_lines) AS avg_indent_levels
             FROM latest_revision_file_entries
             GROUP BY extract_module_name(file_name)
         "#
@@ -131,13 +136,20 @@ impl RepositoryQuerying {
 
         ctx.sql(
             r#"
-            CREATE VIEW hotspots AS
+            CREATE VIEW file_hotspots AS
             SELECT
                 file_name,
+
                 COUNT(git_file_entries.revision) AS num_revisions,
                 COUNT(DISTINCT normalize_author(author)) AS num_authors,
-                last_value(num_code_lines ORDER BY git_file_entries.date) AS num_code_lines,
-                last_value(total_indent_levels ORDER BY git_file_entries.date) AS total_indent_levels
+
+                LAST_VALUE(num_code_lines ORDER BY git_file_entries.date) AS num_code_lines,
+                LAST_VALUE(num_comment_lines ORDER BY git_file_entries.date) AS num_comment_lines,
+                LAST_VALUE(num_blank_lines ORDER BY git_file_entries.date) AS num_blank_lines,
+
+                LAST_VALUE(total_indent_levels ORDER BY git_file_entries.date) AS total_indent_levels,
+                LAST_VALUE(avg_indent_levels ORDER BY git_file_entries.date) AS avg_indent_levels,
+                LAST_VALUE(std_indent_levels ORDER BY git_file_entries.date) AS std_indent_levels
             FROM git_file_entries
             INNER JOIN git_log ON git_log.revision = git_file_entries.revision
             GROUP BY file_name
@@ -149,14 +161,47 @@ impl RepositoryQuerying {
             CREATE VIEW module_hotspots AS
             SELECT
                 latest_revision_module_entries.module_name,
+
                 num_module_revisions.num_revisions,
                 num_module_revisions.num_authors,
+
                 num_code_lines,
-                total_indent_levels
+                num_comment_lines,
+                num_blank_lines,
+
+                total_indent_levels,
+                avg_indent_levels
             FROM latest_revision_module_entries
             INNER JOIN num_module_revisions
                 ON num_module_revisions.module_name = latest_revision_module_entries.module_name
-            ORDER BY num_code_lines DESC
+            "#
+        ).await?;
+
+        ctx.sql(
+            r#"
+            CREATE VIEW file_coupled_revisions AS
+            SELECT
+                 left_entries.revision AS revision,
+                 left_entries.file_name AS left_file_name,
+                 right_entries.file_name AS right_file_name
+            FROM git_file_entries left_entries, git_file_entries right_entries
+            WHERE
+                left_entries.revision = right_entries.revision
+                AND left_entries.file_name != right_entries.file_name
+            "#
+        ).await?;
+
+        ctx.sql(
+            r#"
+            CREATE VIEW module_coupled_revisions AS
+            SELECT
+                 left_entries.revision AS revision,
+                 left_entries.module_name AS left_module_name,
+                 right_entries.module_name AS right_module_name
+            FROM git_module_entries left_entries, git_module_entries right_entries
+            WHERE
+                left_entries.revision = right_entries.revision
+                AND left_entries.module_name != right_entries.module_name
             "#
         ).await?;
 
@@ -390,12 +435,12 @@ impl RepositoryQuerying {
         Ok(modules.into_values().collect())
     }
 
-    pub async fn hotspots(&self, count: Option<usize>) -> QueryingResult<Vec<Hotspot>> {
+    pub async fn file_hotspots(&self, count: Option<usize>) -> QueryingResult<Vec<Hotspot>> {
         let result_df = self.ctx.sql(
             r#"
             SELECT
                 *
-            FROM hotspots
+            FROM file_hotspots
             ORDER BY num_revisions DESC;
             "#
         ).await?;
@@ -420,7 +465,7 @@ impl RepositoryQuerying {
         collect_rows::<Hotspot>(result_df).await
     }
 
-    pub async fn change_couplings(&self, count: Option<usize>) -> QueryingResult<Vec<ChangeCoupling>> {
+    pub async fn file_change_couplings(&self, count: Option<usize>) -> QueryingResult<Vec<ChangeCoupling>> {
         let result_df = self.ctx.sql(
             r#"
             SELECT
@@ -429,14 +474,9 @@ impl RepositoryQuerying {
                 COUNT(revision) AS coupled_revisions
             FROM (
                 SELECT
-                     left_entries.revision AS revision,
-                     left_entries.file_name AS left_file_name,
-                     right_entries.file_name AS right_file_name
-                FROM git_file_entries left_entries, git_file_entries right_entries
-                WHERE
-                    left_entries.revision = right_entries.revision
-                    AND left_entries.file_name != right_entries.file_name
-                    AND left_entries.file_name < right_entries.file_name
+                    *
+                FROM file_coupled_revisions
+                WHERE left_file_name < right_file_name
             )
             GROUP BY left_file_name, right_file_name
             ORDER BY coupled_revisions DESC
@@ -461,14 +501,9 @@ impl RepositoryQuerying {
                     COUNT(revision) AS coupled_revisions
                 FROM (
                     SELECT
-                         left_entries.revision AS revision,
-                         left_entries.file_name AS left_file_name,
-                         right_entries.file_name AS right_file_name
-                    FROM git_file_entries left_entries, git_file_entries right_entries
-                    WHERE
-                        left_entries.revision = right_entries.revision
-                        AND left_entries.file_name != right_entries.file_name
-                        AND left_entries.file_name = $1
+                        *
+                    FROM file_coupled_revisions
+                    WHERE left_file_name = $1
                 )
                 GROUP BY left_file_name, right_file_name
                 ORDER BY coupled_revisions DESC
@@ -494,14 +529,9 @@ impl RepositoryQuerying {
                 COUNT(revision) AS coupled_revisions
             FROM (
                 SELECT
-                     left_entries.revision AS revision,
-                     left_entries.module_name AS left_module_name,
-                     right_entries.module_name AS right_module_name
-                FROM git_module_entries left_entries, git_module_entries right_entries
-                WHERE
-                    left_entries.revision = right_entries.revision
-                    AND left_entries.module_name != right_entries.module_name
-                    AND left_entries.module_name < right_entries.module_name
+                     *
+                FROM module_coupled_revisions
+                WHERE left_module_name < right_module_name
             )
             GROUP BY left_module_name, right_module_name
             ORDER BY coupled_revisions DESC
@@ -526,14 +556,9 @@ impl RepositoryQuerying {
                     COUNT(revision) AS coupled_revisions
                 FROM (
                     SELECT
-                         left_entries.revision AS revision,
-                         left_entries.module_name AS left_module_name,
-                         right_entries.module_name AS right_module_name
-                    FROM git_module_entries left_entries, git_module_entries right_entries
-                    WHERE
-                        left_entries.revision = right_entries.revision
-                        AND left_entries.module_name != right_entries.module_name
-                        AND left_entries.module_name = $1
+                         *
+                    FROM module_coupled_revisions
+                    WHERE left_module_name = $1
                 )
                 GROUP BY left_module_name, right_module_name
                 ORDER BY coupled_revisions DESC

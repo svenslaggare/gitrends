@@ -34,3 +34,7 @@ jobs:
         with:
           name: gitrends_linux_x86_64_ubuntu2204_debian
           path: target/debian/
+      - uses: actions/upload-artifact@v4
+        with:
+          name: gitrends.js
+          path: frontend/static/gitrends.js

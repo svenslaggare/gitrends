@@ -9,22 +9,25 @@ Implemented analysis:
 * Main developer
 * Custom analysis in SQL
 
+![Gitrends](Screenshot.png)
+
 ## How to install
 
 ### Using debian package
 * Install the debian package from the released artifacts.
 * Run as `gitrends <config>`
 
-### As standalone binaries
-* Download the standalone.zip.
-* Unzip to a folder.
-* Run as `./gitrends <config>`
+### Using docker image
+* Run `./build_docker.sh` to build the docker image (`gitrends:latest`).
+* `$SRC_DIR` should contain a folder that contains source directories while `$DATA_DIR` is where output is placed.
+* Run as `docker run -it --rm -v $SRC_DIR:/src -v $DATA_DIR:/data -p 9000:9000 gitrends:latest /data/config.yaml`
 
 ## How to use
 The configuration is defined in a YAML file:
 ```yaml
 source_dir: /home/antjans/Code/sqlgrep
 data_dir: data/sqlgrep
+listen: 0.0.0.0:9000 # If running in docker
 ```
 
 The `source_dir` is the repository to use, and the indexed repository is placed in `data_dir`. After indexing, the program no longer need to access the repository, and no source code is extracted to the index.
@@ -36,11 +39,7 @@ Requirements:
 * `cargo` (https://rustup.rs/)
 * `yarn` (https://yarnpkg.com/getting-started/install)
 
-Commands:
-* Run `cargo build --release` to build web application.
-* Go to `frontend` directory.
-* Run `yarn install --dev` to install JavaScript dependencies.
-* Run `./build_js.sh` to build frontend artifacts.
+Run `./build_deb.sh` to build the Debian package.
 
 ## Implementation details
-The git log extracted as Parquet files, which then is used by Apache DataFusion to provide an querying engine on top of this data. This allows you to write custom SQL queries to query the underlying git data.
+The git log extracted as Parquet files, which then is used by Apache DataFusion to provide a querying engine on top of this data. This allows you to write custom SQL queries to query the underlying git data.

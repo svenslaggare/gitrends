@@ -16,6 +16,7 @@ use axum::extract::{Path, Query, State};
 use askama::Template;
 use serde_json::json;
 use tokio::net::TcpListener;
+use tokio::signal;
 use tokio::sync::Mutex;
 use tokio::task::spawn_blocking;
 use tower_http::services::ServeDir;
@@ -54,8 +55,6 @@ pub async fn main(config: WebAppConfig) {
     if !content_dir.exists() {
         content_dir = std::path::Path::new("/etc/gitrends/static");
     }
-
-    println!("{}", content_dir.display());
 
     let app = Router::new()
         .nest_service("/content", ServeDir::new(content_dir))
@@ -97,7 +96,11 @@ pub async fn main(config: WebAppConfig) {
     let listener = TcpListener::bind(&address).await.unwrap();
     println!("Listening on http://{}", address);
 
-    axum::serve(listener, app).await.unwrap();
+    // axum::serve(listener, app).await.unwrap();
+    tokio::select! {
+        _ = axum::serve(listener, app) => {}
+        _ = signal::ctrl_c() => {}
+    }
 }
 
 struct WebAppState {

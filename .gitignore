@@ -2,3 +2,4 @@
 data
 .idea
 config.yaml
+run_docker.sh

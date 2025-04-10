@@ -15,6 +15,7 @@ import {HomeView} from "./views/home";
 import axios from "axios";
 import {MainDeveloperView} from "./views/mainDeveloper";
 import {MainDeveloperStructureView} from "./views/mainDeveloperStructure";
+import {CustomAnalysisView} from "./views/customAnalysis";
 
 interface ApplicationMainProps {
 
@@ -158,6 +159,13 @@ class ApplicationMain extends React.Component<ApplicationMainProps, ApplicationM
                                     Main developer
                                 </RenderDualLink>
                             </li>
+
+                            <li className="nav-item">
+                                <RenderLink to="/custom-analysis">
+                                    <i className="fa-solid fa-database" />
+                                    Custom analysis
+                                </RenderLink>
+                            </li>
                         </ul>
 
                         {/*<hr className="my-3"/>*/}
@@ -208,6 +216,9 @@ class ApplicationMain extends React.Component<ApplicationMainProps, ApplicationM
                     </Route>
                     <Route path="/main-developer-structure">
                         <RenderMainDeveloperStructureView self={this} />
+                    </Route>
+                    <Route path="/custom-analysis">
+                        <CustomAnalysisView onError={error => { this.setError(error); }} />
                     </Route>
                     <Route path="/">
                         <HomeView onError={error => { this.setError(error); }} />

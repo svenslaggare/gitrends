@@ -132,3 +132,16 @@
     text-anchor: start;
     fill: white;
 }
+
+.editor {
+    min-height: 20em;
+}
+
+.link-button {
+
+}
+
+.link-button:hover {
+    cursor: pointer;
+    font-weight: bold;
+}

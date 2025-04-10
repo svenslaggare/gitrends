@@ -106,3 +106,8 @@ export interface MainDeveloperEntry {
     net_added_lines: number;
     total_net_added_lines: number;
 }
+
+export interface CustomAnalysis {
+    columns: string[];
+    rows: any[][];
+}

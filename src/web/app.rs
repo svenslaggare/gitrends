@@ -10,7 +10,7 @@ use serde::{Deserialize, Serialize};
 
 use axum::response::{Html, IntoResponse, Response};
 use axum::{Json, Router};
-use axum::routing::{get, put};
+use axum::routing::{get, post, put};
 use axum::extract::{Path, Query, State};
 
 use askama::Template;
@@ -79,6 +79,9 @@ pub async fn main(config: WebAppConfig) {
         .route("/api/module/change-coupling", get(get_module_change_coupling))
         .route("/api/module/change-coupling-structure", get(get_module_change_coupling_structure))
         .route("/api/module/main-developer", get(get_modules_main_developer))
+
+        .route("/api/custom-analysis",
+               post(post_custom_analysis))
 
         .with_state(state.clone())
         ;
@@ -358,6 +361,22 @@ async fn get_modules_main_developer(
 
     Ok(Json(repository_querying.modules_main_developer().await?))
 }
+
+#[derive(Deserialize)]
+struct CustomAnalysisQuery {
+    query: String
+}
+
+async fn post_custom_analysis(
+    State(state): State<Arc<WebAppState>>,
+    Json(query): Json<CustomAnalysisQuery>,
+) -> WebAppResult<impl IntoResponse> {
+    let repository_querying = state.repository_querying.load();
+
+    let custom_analysis = repository_querying.custom_analysis(&query.query).await?;
+    Ok(Json(custom_analysis))
+}
+
 
 #[derive(Template)]
 #[template(path="gitrends.html")]

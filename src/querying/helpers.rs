@@ -10,13 +10,13 @@ use crate::querying::QueryingResult;
 pub fn yield_rows<F: FnMut(&[&ArrayRef], usize)>(results: Vec<RecordBatch>, num_columns: usize, mut callback: F) {
     let mut row_columns = Vec::new();
 
-    for row in &results {
+    for batch in &results {
         row_columns.clear();
         for column_index in 0..num_columns {
-            row_columns.push(row.column(column_index));
+            row_columns.push(batch.column(column_index));
         }
 
-        for record_index in 0..row.column(0).len() {
+        for record_index in 0..batch.column(0).len() {
             callback(&row_columns, record_index);
         }
     }

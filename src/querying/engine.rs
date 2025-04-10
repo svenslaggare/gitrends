@@ -3,7 +3,7 @@ use std::path::{Path, PathBuf};
 
 use serde::{Deserialize, Serialize};
 
-use datafusion::arrow::array::{AsArray};
+use datafusion::arrow::array::{Array, AsArray};
 use datafusion::arrow::datatypes::{Int64Type, UInt64Type};
 use datafusion::common::ScalarValue;
 use datafusion::prelude::*;
@@ -11,7 +11,7 @@ use datafusion::prelude::*;
 use crate::indexing::indexer::GitLogEntry;
 use crate::querying::{custom_functions, QueryingResult};
 use crate::querying::helpers::{add_optional_limit, collect_rows, collect_rows_into, yield_rows, FromRow};
-use crate::querying::model::{ChangeCoupling, FileEntry, FileHistoryEntry, Hotspot, MainDeveloperEntry, Module, RepositorySummary};
+use crate::querying::model::{ChangeCoupling, CustomAnalysis, CustomValue, FileEntry, FileHistoryEntry, Hotspot, MainDeveloperEntry, Module, RepositorySummary};
 
 #[derive(Clone, Deserialize, Serialize)]
 pub struct RepositoryQueryingConfig {
@@ -676,6 +676,44 @@ impl RepositoryQuerying {
             .await?;
 
         collect_rows::<MainDeveloperEntry>(result_df).await
+    }
+
+    pub async fn custom_analysis(&self, sql: &str) -> QueryingResult<CustomAnalysis> {
+        let result_df = self.ctx.sql(sql).await?;
+
+        let mut columns = Vec::new();
+        let mut rows = Vec::new();
+        let mut has_definition = false;
+
+        for batch in result_df.collect().await? {
+            for record_index in 0..batch.column(0).len() {
+                let mut row = Vec::new();
+
+                for (column_index, column_def) in batch.schema().fields().iter().enumerate() {
+                    let column = batch.column(column_index);
+
+                    if let Some(value) = CustomValue::from_column(column_def, column, record_index) {
+                        row.push(value);
+
+                        if !has_definition {
+                            columns.push(column_def.name().to_owned());
+                        }
+                    } else {
+                        println!("Warning: unsupported type '{}'", column.data_type())
+                    }
+                }
+
+                has_definition = true;
+                rows.push(row);
+            }
+        }
+
+        Ok(
+            CustomAnalysis {
+                columns,
+                rows
+            }
+        )
     }
 
     async fn get_num_file_revisions(&self) -> QueryingResult<HashMap<String, u64>> {

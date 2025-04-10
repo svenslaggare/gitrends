@@ -7,6 +7,8 @@ export function capitalize(text: string) {
 export function getErrorMessage(error: any) {
     if (error.response !== undefined) {
         return error.response.data.message;
+    } else if (error instanceof Error) {
+        return error.toString();
     } else {
         return "Failed to send request.";
     }

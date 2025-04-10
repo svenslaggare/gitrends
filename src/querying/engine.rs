@@ -641,12 +641,7 @@ impl RepositoryQuerying {
                     LAST_VALUE(net_added_lines ORDER BY net_added_lines, author) AS main_developer_net_added_lines
                 FROM file_developers
                 GROUP BY file_name
-                ORDER BY
-                    CASE
-                        WHEN total_net_added_lines > 0 THEN (main_developer_net_added_lines::real / total_net_added_lines::real)
-                        ELSE 0.0
-                    END
-                    DESC
+                ORDER BY ratio(main_developer_net_added_lines, total_net_added_lines) DESC
                 "#
             )
             .await?;
@@ -665,12 +660,7 @@ impl RepositoryQuerying {
                     LAST_VALUE(net_added_lines ORDER BY net_added_lines, author) AS main_developer_net_added_lines
                 FROM module_developers
                 GROUP BY module_name
-                ORDER BY
-                    CASE
-                        WHEN total_net_added_lines > 0 THEN (main_developer_net_added_lines::real / total_net_added_lines::real)
-                        ELSE 0.0
-                    END
-                    DESC
+                ORDER BY ratio(main_developer_net_added_lines, total_net_added_lines) DESC
                 "#
             )
             .await?;

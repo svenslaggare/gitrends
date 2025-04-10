@@ -1,8 +1,8 @@
 use std::path::Path;
 use std::sync::Arc;
 
-use datafusion::arrow::array::{ArrayRef, BooleanArray, StringViewArray};
-use datafusion::arrow::datatypes::DataType;
+use datafusion::arrow::array::{as_primitive_array, ArrayRef, BooleanArray, Float64Array, StringViewArray};
+use datafusion::arrow::datatypes::{DataType, Int64Type};
 use datafusion::common::cast::as_string_array;
 use datafusion::logical_expr::{create_udf, ColumnarValue, Volatility};
 use datafusion::prelude::*;
@@ -107,6 +107,36 @@ pub fn add(data_directory: &Path, ctx: &SessionContext) -> QueryingResult<()> {
         })
     );
     ctx.register_udf(normalize_author.clone());
+
+    let ratio = create_udf(
+        "ratio",
+        vec![DataType::Int64, DataType::Int64],
+        DataType::Float64,
+        Volatility::Immutable,
+        Arc::new(move |args: &[ColumnarValue]| {
+            let args = ColumnarValue::values_to_arrays(args)?;
+            let arg0 = as_primitive_array::<Int64Type>(&args[0]);
+            let arg1 = as_primitive_array::<Int64Type>(&args[1]);
+
+            let array = arg0.iter().zip(arg1.iter())
+                .map(|(arg0, arg1)| {
+                    match (arg0, arg1) {
+                        (Some(arg0), Some(arg1)) => {
+                            if arg1 != 0 {
+                                Some(arg0 as f64 / arg1 as f64)
+                            } else {
+                                Some(0.0)
+                            }
+                        }
+                        _ => None
+                    }
+                })
+                .collect::<Float64Array>();
+
+            Ok(ColumnarValue::from(Arc::new(array) as ArrayRef))
+        })
+    );
+    ctx.register_udf(ratio.clone());
 
     Ok(())
 }

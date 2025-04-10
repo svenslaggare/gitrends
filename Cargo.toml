@@ -2,12 +2,21 @@
 name = "gitrends"
 version = "0.1.0"
 edition = "2021"
+authors = ["Anton Jansson <anton_jansson@live.se>"]
+description = "Web-based behavior code analysis tool"
+license = "MIT"
+homepage = "https://github.com/svenslaggare/gitrends"
+
+[package.metadata.deb]
+assets = [
+    ["target/release/gitrends", "usr/bin/gitrends", "755"],
+    ["frontend/static/**/*", "etc/gitrends/static", "644"]
+]
 
 [dependencies]
 thiserror = "2"
 chrono = { version = "0.4", features=["serde"] }
 arc-swap = "1"
-float-ord = "0.3"
 
 git2 = "0.20"
 

@@ -50,8 +50,15 @@ pub async fn main(config: WebAppConfig) {
         }
     );
 
+    let mut content_dir = std::path::Path::new("frontend/static");
+    if !content_dir.exists() {
+        content_dir = std::path::Path::new("/etc/gitrends/static");
+    }
+
+    println!("{}", content_dir.display());
+
     let app = Router::new()
-        .nest_service("/content", ServeDir::new("frontend/static"))
+        .nest_service("/content", ServeDir::new(content_dir))
         .route("/", get(index))
         .route("/{*path}", get(index))
 

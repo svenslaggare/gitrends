@@ -5,7 +5,8 @@ import axios from "axios";
 
 import {OnError} from "../helpers/misc";
 import {CommitSpreadEntry, Module} from "../model";
-import {EntryLegend} from "../helpers/charts";
+import {EntryLegend, TABLEAU20} from "../helpers/charts";
+import {schemePaired, schemeSet3} from "d3-scale-chromatic";
 
 interface CommitSpreadViewProps {
     onError: OnError;
@@ -48,6 +49,7 @@ export class CommitSpreadView extends React.Component<CommitSpreadViewProps, Com
                 <StructureChart
                     commitSpreadEntries={this.state.commitSpreadEntries}
                     maxAuthors={13}
+                    minNumCommits={10}
                 />
             </div>
         );
@@ -66,21 +68,13 @@ export class CommitSpreadView extends React.Component<CommitSpreadViewProps, Com
     }
 }
 
-function StructureChart({ commitSpreadEntries, maxAuthors }: {  commitSpreadEntries: CommitSpreadEntry[]; maxAuthors: number; }) {
+function StructureChart({ commitSpreadEntries, maxAuthors, minNumCommits }: {  commitSpreadEntries: CommitSpreadEntry[]; maxAuthors: number; minNumCommits: number; }) {
     let width = 1500;
     let height = 900;
     let margin = 35;
 
-    let modules = new Map<string, CommitSpreadEntry[]>();
     let authorsMap = new Map<string, number>();
     for (let entry of commitSpreadEntries) {
-        let moduleEntries = modules.get(entry.module_name);
-        if (moduleEntries == undefined) {
-            moduleEntries = [];
-            modules.set(entry.module_name, moduleEntries);
-        }
-
-        moduleEntries.push(entry);
         authorsMap.set(entry.author, (authorsMap.get(entry.author) ?? 0 )+ 1)
     }
 
@@ -89,6 +83,22 @@ function StructureChart({ commitSpreadEntries, maxAuthors }: {  commitSpreadEntr
     topAuthors = topAuthors.slice(0, maxAuthors);
     let validAuthors = new Set<string>(topAuthors.map(entry => entry[0]));
     validAuthors.add("Others");
+
+    let modules = new Map<string, Map<string, number>>();
+    for (let entry of commitSpreadEntries) {
+        let moduleEntries = modules.get(entry.module_name);
+        if (moduleEntries == undefined) {
+            moduleEntries = new Map<string, number>();
+            modules.set(entry.module_name, moduleEntries);
+        }
+
+        let author = entry.author;
+        if (!validAuthors.has(author)) {
+            author = "Others";
+        }
+
+        moduleEntries.set(author, (moduleEntries.get(author) ?? 0) + entry.num_revisions);
+    }
 
     interface Tree {
         name: string;
@@ -107,23 +117,25 @@ function StructureChart({ commitSpreadEntries, maxAuthors }: {  commitSpreadEntr
             children: []
         };
 
-        for (let entry of entries) {
-            let author = entry.author;
-            if (!validAuthors.has(author)) {
-                author = "Others";
-            }
+        let moduleNumRevisions = 0;
+        for (let [author, numRevisions] of entries) {
+            moduleNumRevisions += numRevisions;
 
             moduleTree.children.push({
                 name: author,
-                value: entry.num_revisions
+                value: numRevisions
             });
+        }
+
+        if (moduleNumRevisions < minNumCommits) {
+            continue;
         }
 
         data.children.push(moduleTree);
     }
     let authors = Array.from(validAuthors.values());
 
-    let color = d3.scaleOrdinal(authors, d3.schemeTableau10);
+    let color = d3.scaleOrdinal(authors, TABLEAU20);
 
     let root = d3.treemap<Tree>()
         .tile(d3.treemapBinary)

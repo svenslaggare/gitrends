@@ -608,6 +608,13 @@ impl RawMainDeveloperTree {
 }
 
 #[derive(Debug, Serialize)]
+pub struct CommitSpreadEntry {
+    pub module_name: String,
+    pub author: String,
+    pub num_revisions: u64
+}
+
+#[derive(Debug, Serialize)]
 pub struct CustomAnalysis {
     pub columns: Vec<String>,
     pub rows: Vec<CustomValueRow>

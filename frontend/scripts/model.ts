@@ -107,6 +107,12 @@ export interface MainDeveloperEntry {
     total_net_added_lines: number;
 }
 
+export interface CommitSpreadEntry {
+    module_name: string;
+    author: string;
+    num_revisions: number;
+}
+
 export interface CustomAnalysis {
     columns: string[];
     rows: any[][];

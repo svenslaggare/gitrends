@@ -16,6 +16,7 @@ import axios from "axios";
 import {MainDeveloperView} from "./views/mainDeveloper";
 import {MainDeveloperStructureView} from "./views/mainDeveloperStructure";
 import {CustomAnalysisView} from "./views/customAnalysis";
+import {CommitSpreadView} from "./views/commitSpread";
 
 interface ApplicationMainProps {
 
@@ -163,22 +164,19 @@ class ApplicationMain extends React.Component<ApplicationMainProps, ApplicationM
                             </li>
 
                             <li className="nav-item">
+                                <RenderLink to="/commit-spread">
+                                    <i className="fa-solid fa-code-commit" />
+                                    Commit spread
+                                </RenderLink>
+                            </li>
+
+                            <li className="nav-item">
                                 <RenderLink to="/custom-analysis">
                                     <i className="fa-solid fa-database" />
                                     Custom analysis
                                 </RenderLink>
                             </li>
                         </ul>
-
-                        {/*<hr className="my-3"/>*/}
-
-                        {/*<ul className="nav flex-column mb-auto">*/}
-                        {/*    <li className="nav-item">*/}
-                        {/*        <a className="nav-link d-flex align-items-center gap-2" href="#">*/}
-                        {/*            Settings*/}
-                        {/*        </a>*/}
-                        {/*    </li>*/}
-                        {/*</ul>*/}
                     </div>
                 </div>
             </div>
@@ -218,6 +216,9 @@ class ApplicationMain extends React.Component<ApplicationMainProps, ApplicationM
                     </Route>
                     <Route path="/main-developer-structure">
                         <RenderMainDeveloperStructureView self={this} />
+                    </Route>
+                    <Route path="/commit-spread">
+                        <CommitSpreadView onError={error => { this.setError(error); }} />
                     </Route>
                     <Route path="/custom-analysis">
                         <CustomAnalysisView onError={error => { this.setError(error); }} />

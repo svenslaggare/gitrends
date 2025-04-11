@@ -11,7 +11,7 @@ use datafusion::prelude::*;
 use crate::indexing::indexer::GitLogEntry;
 use crate::querying::{custom_functions, QueryingResult};
 use crate::querying::helpers::{add_optional_limit, collect_rows, collect_rows_into, yield_rows, FromRow};
-use crate::querying::model::{ChangeCoupling, CustomAnalysis, CustomValue, FileEntry, FileHistoryEntry, Hotspot, MainDeveloperEntry, Module, RepositorySummary};
+use crate::querying::model::{ChangeCoupling, CommitSpreadEntry, CustomAnalysis, CustomValue, FileEntry, FileHistoryEntry, Hotspot, MainDeveloperEntry, Module, RepositorySummary};
 
 #[derive(Clone, Deserialize, Serialize)]
 pub struct RepositoryQueryingConfig {
@@ -666,6 +666,25 @@ impl RepositoryQuerying {
             .await?;
 
         collect_rows::<MainDeveloperEntry>(result_df).await
+    }
+
+    pub async fn commit_spread(&self) -> QueryingResult<Vec<CommitSpreadEntry>> {
+        let result_df = self.ctx
+            .sql(
+                r#"
+                SELECT
+                    module_name,
+                    normalize_author(author) AS author,
+                    COUNT(git_module_entries.revision) AS num_revisions
+                FROM git_module_entries
+                INNER JOIN git_log ON git_log.revision = git_module_entries.revision
+                GROUP BY module_name, normalize_author(author)
+                ORDER BY module_name, num_revisions DESC
+                "#
+            )
+            .await?;
+
+        collect_rows::<CommitSpreadEntry>(result_df).await
     }
 
     pub async fn custom_analysis(&self, sql: &str) -> QueryingResult<CustomAnalysis> {

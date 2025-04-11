@@ -4,7 +4,7 @@ use datafusion::common::DataFusionError;
 use datafusion::dataframe::DataFrame;
 
 use crate::indexing::indexer::GitLogEntry;
-use crate::querying::model::{Author, FileEntry, FileHistoryEntry, Hotspot, MainDeveloperEntry};
+use crate::querying::model::{Author, CommitSpreadEntry, FileEntry, FileHistoryEntry, Hotspot, MainDeveloperEntry};
 use crate::querying::QueryingResult;
 
 pub fn yield_rows<F: FnMut(&[&ArrayRef], usize)>(results: Vec<RecordBatch>, num_columns: usize, mut callback: F) {
@@ -142,6 +142,22 @@ impl FromRow for MainDeveloperEntry {
             main_developer,
             net_added_lines,
             total_net_added_lines
+        }
+    }
+}
+
+impl FromRow for CommitSpreadEntry {
+    const NUM_COLUMNS: usize = 3;
+
+    fn from_row(columns: &[&ArrayRef], row_index: usize, base_column_index: usize) -> CommitSpreadEntry {
+        let module_name = columns[base_column_index].as_string_view().value(row_index).to_owned();
+        let author = columns[base_column_index + 1].as_string_view().value(row_index).to_owned();
+        let num_revisions = columns[base_column_index + 2].as_primitive::<Int64Type>().value(row_index) as u64;
+
+        CommitSpreadEntry {
+            module_name,
+            author,
+            num_revisions
         }
     }
 }

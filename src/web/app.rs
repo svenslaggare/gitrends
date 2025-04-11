@@ -88,9 +88,9 @@ pub async fn main(config: WebAppConfig) {
         .route("/api/module/change-coupling", get(get_module_change_coupling))
         .route("/api/module/change-coupling-structure", get(get_module_change_coupling_structure))
         .route("/api/module/main-developer", get(get_modules_main_developer))
+        .route("/api/module/commit-spread", get(get_modules_commit_spread))
 
-        .route("/api/custom-analysis",
-               post(post_custom_analysis))
+        .route("/api/custom-analysis", post(post_custom_analysis))
 
         .with_state(state.clone())
         ;
@@ -406,6 +406,14 @@ async fn get_modules_main_developer(
     let repository_querying = state.repository_querying.load();
 
     Ok(Json(repository_querying.modules_main_developer().await?))
+}
+
+async fn get_modules_commit_spread(
+    State(state): State<Arc<WebAppState>>
+) -> WebAppResult<impl IntoResponse> {
+    let repository_querying = state.repository_querying.load();
+
+    Ok(Json(repository_querying.commit_spread().await?))
 }
 
 #[derive(Deserialize)]

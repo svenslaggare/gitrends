@@ -1,4 +1,5 @@
-# Gitrends
+![Gitrends](frontend/static/images/Logo.png)
+
 Web-based behavior code analysis tool based on the work by Adam Tornhill in "Your Code as a Crime Scene".
 
 Implemented analysis:
@@ -80,3 +81,6 @@ Run `./build_deb.sh` to build the Debian package.
 The data from the git log and source code analysis is extracted as Parquet files which then is used by Apache DataFusion to provide a querying engine on top of this data. 
 
 This allows you to write custom SQL queries to query the underlying git data.
+
+## Logo
+Logo inspired by the Git logo - see https://git-scm.com/downloads/logos.

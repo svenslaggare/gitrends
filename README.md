@@ -8,6 +8,7 @@ Implemented analysis:
 * Hotspot
 * Change coupling
 * Main developer
+* Commit spread
 * Custom analysis in SQL
 
 ![Gitrends](Screenshot.png)

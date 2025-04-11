@@ -65,7 +65,7 @@ export class MainDeveloperView extends React.Component<MainDeveloperViewProps, M
                 <h3>Histogram</h3>
                 <HistogramChart
                     data={mainDeveloperHistogram}
-                    max={13}
+                    max={9}
                     normalized={true}
                 />
 

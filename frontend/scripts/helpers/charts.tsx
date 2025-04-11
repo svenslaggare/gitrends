@@ -95,15 +95,23 @@ export function HistogramChart({ data, max, normalized }: { data: Map<string, nu
     const gy = useRef();
 
     let orderedData = Array.from(data.entries());
+    orderedData.sort((a, b) => -(a[1] - b[1]));
+    let total = d3.sum(orderedData, d => d[1]);
 
-    if (normalized) {
-        let total = d3.sum(orderedData, d => d[1]);
-        orderedData = orderedData.map(([name, value]) => [name, value / total]);
+    let maxIndex = Math.min(max, orderedData.length);
+    let othersData = [...orderedData].slice(maxIndex);
+    orderedData = orderedData.slice(0, maxIndex);
+
+    if (othersData.length > 0) {
+        orderedData.push([
+            "Others",
+            d3.sum(othersData, d => d[1])
+        ]);
     }
 
-    orderedData.sort((a, b) => -(a[1] - b[1]));
-
-    orderedData = orderedData.slice(0, Math.min(max, orderedData.length));
+    if (normalized) {
+        orderedData = orderedData.map(([name, value]) => [name, value / total]);
+    }
 
     const x = d3.scaleLinear()
         .domain([0, d3.max(orderedData, d => d[1])])
@@ -119,7 +127,7 @@ export function HistogramChart({ data, max, normalized }: { data: Map<string, nu
     useEffect(
         () => {
             d3.select(gx.current)
-                .call(g => g.select("text").remove())
+                .call(g => g.select("g").remove())
                 // @ts-ignore
                 .call(d3.axisTop(x).ticks(width / 80, normalized ? "%" : ""))
                 .call(g => g.select(".domain").remove())
@@ -130,7 +138,7 @@ export function HistogramChart({ data, max, normalized }: { data: Map<string, nu
     useEffect(
         () => {
             d3.select(gy.current)
-                .call(g => g.select("text").remove())
+                .call(g => g.select("g").remove())
                 // @ts-ignore
                 .call(d3.axisLeft(y).tickSizeOuter(0))
         },

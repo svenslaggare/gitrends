@@ -32,9 +32,9 @@ data_dir: data/sqlgrep
 listen: 0.0.0.0:9000 # If running in docker
 ```
 
-The `source_dir` is the repository to use, and the indexed repository is placed in `data_dir`. After indexing, the program no longer need to access the repository, and no source code is extracted to the index.
+The `source_dir` is the repository to index with the indexed repository being placed at `data_dir`. After indexing, the program no longer need to access the repository, and no source code is extracted to the index.
 
-Then run `gitrends config.yaml` and then a goto http://localhost:9000 to access the web tool.
+Then run `gitrends config.yaml` and then browse to http://localhost:9000 to access the tool.
 
 ### Module definitions
 The `modules.txt` file in the `data_dir` allows you to define the module structure of your repository:

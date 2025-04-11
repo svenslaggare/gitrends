@@ -10,7 +10,7 @@ import "ace-builds/src-noconflict/theme-dracula";
 import {OnError} from "../helpers/misc";
 import {Module} from "../model";
 import {AlertBox, TypeSwitcher} from "../helpers/view";
-import {EntryLegend} from "../helpers/charts";
+import {EntryLegend, TABLEAU20} from "../helpers/charts";
 
 export enum ModulesBreakdownType {
     CodeLines,
@@ -217,7 +217,7 @@ function StructureChart({ breakdownType, modules }: { breakdownType: ModulesBrea
         })
     }
 
-    let color = d3.scaleOrdinal(data.children.map(d => d.name), d3.schemeTableau10);
+    let color = d3.scaleOrdinal(data.children.map(d => d.name), TABLEAU20);
 
     let root = d3.treemap<Tree>()
         .tile(d3.treemapBinary)

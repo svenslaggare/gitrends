@@ -37,9 +37,12 @@ export class MainDeveloperView extends React.Component<MainDeveloperViewProps, M
             mainDeveloperHistogram.set(name, count + 1);
         }
 
-        let mainDeveloperEntries = [...this.state.mainDeveloperEntries]
-            .filter(entry => entry.net_added_lines > 100)
-            .slice(0, 100);
+        let mainDeveloperEntries = this.state.mainDeveloperEntries;
+        if (this.state.entryType == EntryType.File) {
+            mainDeveloperEntries = [...this.state.mainDeveloperEntries]
+                .filter(entry => entry.net_added_lines > 100)
+                .slice(0, 100);
+        }
 
         return (
             <div>

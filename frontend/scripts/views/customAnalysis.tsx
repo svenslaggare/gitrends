@@ -75,7 +75,7 @@ export class CustomAnalysisView extends React.Component<CustomAnalysisViewProps,
                             }}
                             width="100%"
                             height="100%"
-                            className="editor"
+                            className="sql-editor"
                         />
                     </div>
                     <div className="col-3">

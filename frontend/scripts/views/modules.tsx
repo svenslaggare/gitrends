@@ -3,9 +3,13 @@ import React from "react";
 import * as d3 from "d3";
 import axios from "axios";
 
+import AceEditor from "react-ace";
+import "ace-builds/src-noconflict/mode-sql";
+import "ace-builds/src-noconflict/theme-dracula";
+
 import {OnError} from "../helpers/misc";
 import {Module} from "../model";
-import {TypeSwitcher} from "../helpers/view";
+import {AlertBox, TypeSwitcher} from "../helpers/view";
 import {EntryLegend} from "../helpers/charts";
 
 export enum ModulesBreakdownType {
@@ -21,23 +25,38 @@ interface ModulesViewProps {
 interface ModulesViewState {
     breakdownType: ModulesBreakdownType;
     modules: Module[];
+    showEditor: boolean;
+    moduleDefinitionContent: string;
+    status: string;
 }
 
 export class ModulesView extends React.Component<ModulesViewProps, ModulesViewState> {
+    editArea: React.RefObject<AceEditor>;
+
     constructor(props) {
         super(props);
 
         this.state = {
             breakdownType: this.props.initialBreakdownType ?? ModulesBreakdownType.CodeLines,
-            modules: null
+            modules: null,
+            moduleDefinitionContent: "",
+            showEditor: false,
+            status: null
         }
 
         this.fetchModules();
+        this.fetchModuleDefinition();
     }
 
     render() {
         return (
             <div>
+                <AlertBox
+                    className="alert-success"
+                    message={this.state.status}
+                    onClose={() => { this.setState({ status: null }); }}
+                />
+
                 <div className="pt-3 pb-2 mb-3 border-bottom">
                     <TypeSwitcher
                         types={new Map([
@@ -50,10 +69,57 @@ export class ModulesView extends React.Component<ModulesViewProps, ModulesViewSt
                         }}
                     />
 
-                    <h1 className="h2">Modules</h1>
+                    <h1 className="h2">
+                        Modules
+
+                        <i
+                            className="fa-solid fa-pencil link-button"
+                            style={{ fontSize: "large", marginLeft: "0.5em", verticalAlign: "middle" }}
+                            onClick={() => { this.setState({ showEditor: !this.state.showEditor }); }}
+                        />
+                    </h1>
                 </div>
 
+                {this.renderEditor()}
                 {this.renderChart()}
+            </div>
+        );
+    }
+
+    renderEditor() {
+        if (!this.state.showEditor) {
+            return null;
+        }
+
+        return (
+            <div>
+                <AceEditor
+                    ref={this.editArea}
+                    mode="sql"
+                    theme="dracula"
+                    name="editor"
+                    editorProps={{ $blockScrolling: true }}
+                    value={this.state.moduleDefinitionContent}
+                    onChange={newModuleDefinitionContent => {
+                        this.setState({
+                            moduleDefinitionContent: newModuleDefinitionContent
+                        });
+                    }}
+                    width="100%"
+                    height="100%"
+                    className="module-definition-editor"
+                />
+
+                <br />
+                <button className="btn btn-primary" onClick={() => { this.updateModuleDefinition(); }}>
+                    Update
+                </button>
+
+                <button className="btn btn-primary" style={{ marginLeft: "0.5em" }} onClick={() => { this.setState({ showEditor: false }); }}>
+                    Close
+                </button>
+                <br />
+                <br />
             </div>
         );
     }
@@ -79,6 +145,32 @@ export class ModulesView extends React.Component<ModulesViewProps, ModulesViewSt
                 this.setState({
                     modules: response.data
                 });
+            })
+            .catch(error => {
+                this.props.onError(error);
+            });
+    }
+
+    fetchModuleDefinition() {
+        axios.get(`/api/state/module-definition`)
+            .then(response => {
+                this.setState({
+                    moduleDefinitionContent: response.data.content
+                });
+            })
+            .catch(error => {
+                this.props.onError(error);
+            });
+    }
+
+    updateModuleDefinition() {
+        axios.put(`/api/state/module-definition`, { content: this.state.moduleDefinitionContent })
+            .then(_response => {
+                this.setState({
+                    status: "Module definition updated."
+                });
+
+                this.fetchModules();
             })
             .catch(error => {
                 this.props.onError(error);

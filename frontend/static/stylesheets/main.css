@@ -133,8 +133,12 @@
     fill: white;
 }
 
-.editor {
+.sql-editor {
     min-height: 20em;
+}
+
+.module-definition-editor {
+    min-height: 40em;
 }
 
 .link-button {

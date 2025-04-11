@@ -14,6 +14,8 @@ type WebAppResult<T> = Result<T, WebAppError>;
 
 #[derive(Debug, Error)]
 enum WebAppError {
+    #[error("I/O: {0}")]
+    IO(std::io::Error),
     #[error("Failed to persist state due to: {0}")]
     PersistState(std::io::Error),
     #[error("Indexing: {0}")]
@@ -25,6 +27,17 @@ enum WebAppError {
 impl IntoResponse for WebAppError {
     fn into_response(self) -> Response {
         match self {
+            WebAppError::IO(err) => {
+                with_response_code(
+                    Json(
+                        json!({
+                            "success": false,
+                            "message": err.to_string()
+                        })
+                    ).into_response(),
+                    StatusCode::INTERNAL_SERVER_ERROR
+                )
+            }
             WebAppError::PersistState(err) => {
                 with_response_code(
                     Json(

@@ -67,6 +67,9 @@ pub async fn main(config: WebAppConfig) {
         .route("/api/state/valid-date", get(get_valid_date))
         .route("/api/state/valid-date", put(set_valid_date))
 
+        .route("/api/state/module-definition", get(get_module_definition))
+        .route("/api/state/module-definition", put(set_module_definition))
+
         .route("/api/summary", get(get_summary))
 
         .route("/api/git/log", get(get_git_log))
@@ -212,6 +215,39 @@ async fn set_valid_date(
     persistent_state.save_to_file(&state.config.data_dir.join("state.json"))
         .map_err(|err| WebAppError::PersistState(err))?;
 
+    state.recreate_repository_querying(&persistent_state).await?;
+
+    Ok(Json(json!({ "success": true })))
+}
+
+#[derive(Serialize, Deserialize)]
+struct ModuleDefinitionContent {
+    content: String
+}
+
+async fn get_module_definition(
+    State(state): State<Arc<WebAppState>>
+)  -> WebAppResult<impl IntoResponse> {
+    let module_definitions_path = state.config.data_dir.join("modules.txt");
+
+    Ok(
+        Json(
+            ModuleDefinitionContent {
+                content: std::fs::read_to_string(module_definitions_path).unwrap_or(String::new())
+            }
+        )
+    )
+}
+
+async fn set_module_definition(
+    State(state): State<Arc<WebAppState>>,
+    Json(input): Json<ModuleDefinitionContent>
+)  -> WebAppResult<impl IntoResponse> {
+    let module_definitions_path = state.config.data_dir.join("modules.txt");
+
+    std::fs::write(module_definitions_path, input.content).map_err(|err| WebAppError::IO(err))?;
+
+    let persistent_state = state.persistent_state.lock().await;
     state.recreate_repository_querying(&persistent_state).await?;
 
     Ok(Json(json!({ "success": true })))

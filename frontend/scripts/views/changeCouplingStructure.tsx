@@ -51,7 +51,7 @@ export class ChangeCouplingStructureView extends React.Component<ChangeCouplingS
                         }}
                     />
 
-                    <h1 className="h2">Change coupling</h1>
+                    <h1 className="h2">Change couplings</h1>
                 </div>
 
                 {this.renderChart()}

@@ -120,7 +120,7 @@ export function SelectedFileModal({ name, selectedFile, changeCoupling, onClose 
                     <div className="modal-body">
                         <CodeComplexityTimeChart data={selectedFile.history} />
 
-                        <h3 style={{ marginTop: "0.5em" }}>Top change coupling</h3>
+                        <h3 style={{ marginTop: "0.5em" }}>Top change couplings</h3>
                         <Table
                             columns={[
                                 {name: "right_name", display: "Coupled file name name", clickable: false},

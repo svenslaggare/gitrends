@@ -88,7 +88,7 @@ export class ChangeCouplingView extends React.Component<ChangeCouplingViewProps,
                         }}
                     />
 
-                    <h1 className="h2">Change coupling</h1>
+                    <h1 className="h2">Change couplings</h1>
                 </div>
 
                 <AutoCompleteInput

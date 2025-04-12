@@ -8,7 +8,7 @@ import "ace-builds/src-noconflict/theme-dracula";
 
 import { OnError} from "../helpers/misc";
 import { CustomAnalysis } from "../model";
-import {Table} from "../helpers/view";
+import {Conditional, Table} from "../helpers/view";
 import Moment from "react-moment";
 
 interface CustomAnalysisViewProps {
@@ -18,8 +18,12 @@ interface CustomAnalysisViewProps {
 interface CustomAnalysisViewState {
     query: string;
     result: CustomAnalysis;
+
     savedQueries: SavedQuery[];
-    showHelp: boolean
+    currentQueryIndex: number;
+    queryName: string;
+
+    showHelp: boolean;
 }
 
 export class CustomAnalysisView extends React.Component<CustomAnalysisViewProps, CustomAnalysisViewState> {
@@ -35,6 +39,8 @@ export class CustomAnalysisView extends React.Component<CustomAnalysisViewProps,
                 rows: []
             },
             savedQueries: this.loadSavedQueries() ?? [],
+            currentQueryIndex: null,
+            queryName: null,
             showHelp: false
         };
     }
@@ -84,29 +90,89 @@ export class CustomAnalysisView extends React.Component<CustomAnalysisViewProps,
                             {
                                 this.state.savedQueries.map((query, queryIndex) =>
                                     <li key={queryIndex}>
-                                        <span className="link-button" onClick={() => { this.switchToQuery(query); }}>
-                                            {query.name} at <Moment format="YYYY-MM-DD HH:mm:ss">{query.saveDate * 1000.0}</Moment>
+                                        <span className="link-button" onClick={() => {
+                                            this.switchToQuery(query);
+                                        }}>
+                                            {query.name} at <Moment
+                                            format="YYYY-MM-DD HH:mm:ss">{query.saveDate * 1000.0}</Moment>
                                         </span>
+
+                                        <i
+                                            className="fa-solid fa-pencil link-button"
+                                            style={{marginLeft: "7px"}}
+                                            onClick={() => {
+                                                this.editSavedQuery(queryIndex);
+                                            }}
+                                        />
+
                                         <i
                                             className="fa-solid fa-trash link-button"
-                                            style={{ marginLeft: "5px" }}
-                                            onClick={() => { this.removeSavedQuery(queryIndex); }}
+                                            style={{marginLeft: "7px"}}
+                                            onClick={() => {
+                                                this.removeSavedQuery(queryIndex);
+                                            }}
                                         />
                                     </li>
                                 )
                             }
                         </ul>
 
-                        <button className="btn btn-primary" onClick={() => { this.saveQuery(); }}>Save</button>
+                        <Conditional
+                            condition={this.state.currentQueryIndex != null}
+                            trueBranch={() =>
+                                <div className="input-group mb-3">
+                                    <input
+                                        type="text"
+                                        className="form-control"
+                                        placeholder="Name of the query"
+                                        aria-describedby="query-name"
+                                        value={this.state.queryName}
+                                        onChange={event => {
+                                            this.setState({
+                                                queryName: event.target.value
+                                            });
+                                        }}
+                                    />
+
+                                    <button
+                                        className="btn btn-outline-secondary"
+                                        type="button"
+                                        id="query-name"
+                                        onClick={() => { this.saveQueryName(); }}
+                                    >
+                                        Update
+                                    </button>
+                                </div>
+                            }
+                            falseBranch={() => null}
+                        />
+
+                        <button
+                            className="btn btn-primary"
+                            onClick={() => {
+                                this.saveQuery();
+                            }}
+                        >
+                            Save
+                        </button>
                     </div>
                 </div>
 
-                <br />
-                <button className="btn btn-primary btn-lg" onClick={() => { this.performQuery(); }}>
+                <br/>
+                <button
+                    className="btn btn-primary btn-lg"
+                    onClick={() => {
+                        this.performQuery();
+                    }}
+                >
                     Execute
                 </button>
 
-                <button className="btn btn-primary btn-lg" style={{ marginLeft: "1em" }} onClick={() => { this.exportData(); }}>
+                <button
+                    className="btn btn-primary btn-lg"
+                    style={{ marginLeft: "1em" }}
+                    onClick={() => { this.exportData(); }}
+                >
                     Export
                 </button>
 
@@ -179,6 +245,24 @@ export class CustomAnalysisView extends React.Component<CustomAnalysisViewProps,
 
         let newSavedQueries = [savedQuery, ...this.state.savedQueries];
         this.updateSavedQueries(newSavedQueries);
+    }
+
+    editSavedQuery(index: number) {
+        this.setState({
+            currentQueryIndex: index,
+            queryName: this.state.savedQueries[index].name
+        })
+    }
+
+    saveQueryName() {
+        let newSavedQueries = [...this.state.savedQueries];
+        newSavedQueries[this.state.currentQueryIndex].name = this.state.queryName;
+        this.updateSavedQueries(newSavedQueries);
+
+        this.setState({
+            queryName: null,
+            currentQueryIndex: null
+        });
     }
 
     removeSavedQuery(index: number) {

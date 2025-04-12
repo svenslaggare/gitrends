@@ -3,10 +3,13 @@ use std::net::{SocketAddr};
 use std::str::FromStr;
 use std::sync::Arc;
 
+use log::info;
+
 use arc_swap::ArcSwap;
 use chrono::Local;
 
 use serde::{Deserialize, Serialize};
+use serde_json::json;
 
 use axum::response::{Html, IntoResponse, Response};
 use axum::{Json, Router};
@@ -14,8 +17,6 @@ use axum::routing::{get, post, put};
 use axum::extract::{Path, Query, State};
 
 use askama::Template;
-use log::info;
-use serde_json::json;
 use tokio::net::TcpListener;
 use tokio::signal;
 use tokio::sync::Mutex;
@@ -31,7 +32,20 @@ use crate::web::{WebAppError, WebAppResult};
 pub struct WebAppConfig {
     pub source_dir: std::path::PathBuf,
     pub data_dir: std::path::PathBuf,
-    pub listen: Option<SocketAddr>
+    pub listen: Option<SocketAddr>,
+
+    #[serde(default="default_change_coupling_min_ratio")]
+    pub change_coupling_min_ratio: f64,
+    #[serde(default="default_change_coupling_min_commits")]
+    pub change_coupling_min_commits: u64
+}
+
+fn default_change_coupling_min_ratio() -> f64 {
+    0.2
+}
+
+fn default_change_coupling_min_commits() -> u64 {
+    15
 }
 
 pub async fn main(config: WebAppConfig) {
@@ -100,7 +114,6 @@ pub async fn main(config: WebAppConfig) {
     let listener = TcpListener::bind(&address).await.unwrap();
     info!("Listening on http://{}", address);
 
-    // axum::serve(listener, app).await.unwrap();
     tokio::select! {
         _ = axum::serve(listener, app) => {}
         _ = signal::ctrl_c() => {}
@@ -159,6 +172,12 @@ async fn index() -> Response {
     };
 
     Html(template.render().unwrap()).into_response()
+}
+
+#[derive(Template)]
+#[template(path="gitrends.html")]
+struct AppTemplate {
+    time: i64
 }
 
 async fn reload_data(
@@ -320,10 +339,17 @@ async fn get_file_change_coupling(
 async fn get_file_change_coupling_structure(
     State(state): State<Arc<WebAppState>>
 ) -> WebAppResult<impl IntoResponse> {
+    let config = &state.config;
     let repository_querying = state.repository_querying.load();
 
     let change_couplings = repository_querying.file_change_couplings(None).await?;
-    let change_coupling_tree = ChangeCouplingTree::from_vec(&change_couplings, true, 15, 0.2);
+    let change_coupling_tree = ChangeCouplingTree::from_vec(
+        &change_couplings,
+        true,
+        config.change_coupling_min_commits,
+        config.change_coupling_min_ratio
+    );
+
     Ok(Json(change_coupling_tree))
 }
 
@@ -394,10 +420,17 @@ async fn get_module_change_coupling(
 async fn get_module_change_coupling_structure(
     State(state): State<Arc<WebAppState>>
 ) -> WebAppResult<impl IntoResponse> {
+    let config = &state.config;
     let repository_querying = state.repository_querying.load();
 
     let change_couplings = repository_querying.module_change_couplings(None).await?;
-    let change_coupling_tree = ChangeCouplingTree::from_vec(&change_couplings, false, 15, 0.2);
+    let change_coupling_tree = ChangeCouplingTree::from_vec(
+        &change_couplings,
+        false,
+        config.change_coupling_min_commits,
+        config.change_coupling_min_ratio
+    );
+
     Ok(Json(change_coupling_tree))
 }
 
@@ -430,11 +463,4 @@ async fn post_custom_analysis(
 
     let custom_analysis = repository_querying.custom_analysis(&query.query).await?;
     Ok(Json(custom_analysis))
-}
-
-
-#[derive(Template)]
-#[template(path="gitrends.html")]
-struct AppTemplate {
-    time: i64
 }

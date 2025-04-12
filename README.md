@@ -16,12 +16,12 @@ The following behavior code analysis are implemented:
 ## How to install
 
 ### Using debian package
-* Install the debian package from the released artifacts.
+* Install the debian package.
 * Run as `gitrends <config>`
 
 ### Using docker image
-* Run `./build_docker.sh` to build the docker image (`gitrends:latest`).
-* `$SRC_DIR` should contain a folder that contains source directories while `$DATA_DIR` is where output is placed.
+* Run `./build_docker.sh` to build the docker image (produces an image called `gitrends:latest`).
+* `$SRC_DIR` should contain a folder that contains source directories to index while `$DATA_DIR` is where output is placed.
 * Run as `docker run -it --rm -v $SRC_DIR:/src -v $DATA_DIR:/data -p 9000:9000 gitrends:latest /data/config.yaml`
 
 ### Using standalone
@@ -36,13 +36,16 @@ data_dir: data/sqlgrep
 listen: 0.0.0.0:9000 # If running in docker
 ```
 
-The `source_dir` is the repository to index with the indexed repository being placed at `data_dir`.
+* `source_dir` is the repository to index.
+* `data_dir` is where the index of the repository is placed at.
+
 After indexing, the program no longer need to access the repository, and no source code is extracted to the index (code statistics are though).
 
-Then run `gitrends config.yaml` and then browse to http://localhost:9000 to access the tool.
+After running the application (see above), browse to http://localhost:9000 to access the tool.
 
 ### Module definitions
-The `modules.txt` file in the `data_dir` allows you to define the module structure of your repository:
+The `modules.txt` file in the `data_dir` allows you to define the module structure of your repository.
+
 ```text
 src/model.rs => model
 src/data_model.rs => model
@@ -64,19 +67,25 @@ Cargo* => build
 .github/workflows/**/* => ci
 ```
 
+If this file is not specified, or a file don't match above patterns, the folder of the file will be used as module instead.
+
+When writing custom analysis, the function `extract_module_name` can then be used to extract the module name of a file.
+
 ### Ignore files
 The `ignore.txt` file in the `data_dir` allows you to ignore certain files from being used in the analysis (they are still indexed, so no reindexing required).
+
 ```text
 src/*.rs
 ```
 
 ### Authors
-The `authors.txt` file in the `data_dir` allows you to transform name of authors of commits:
+The `authors.txt` file in the `data_dir` allows you to normalize the authors of commits (such that just one name is used).
+
 ```text
 antjans => Anton Jansson
 ```
 
-The function `normalize_author` allows you to normalize any author as defined above when writing custom analysis.
+When writing custom analysis, the function `normalize_author` can then be used to normalize the raw commit names.
 
 ## How to build
 Requirements:
@@ -86,8 +95,8 @@ Requirements:
 Run `./build_deb.sh` to build the Debian package.
 
 ## Implementation details
-The data from the git log and source code analysis is extracted as Parquet files which then is used by Apache DataFusion to provide a querying engine on top of the data. 
-Most of the analysis is then implemented as SQL queries. In addition, this allows a user of the tool to write custom SQL queries of the underlying data as well.
+The data from the git log and source code analysis is extracted as Parquet files which then is used by Apache DataFusion to provide querying of the git data.
+This allows most of the analysis to be implemented as SQL queries. In addition, this allows a user of the tool to write custom SQL queries of the same data.
 
 ## Logo
 Logo inspired by the Git logo - see https://git-scm.com/downloads/logos.

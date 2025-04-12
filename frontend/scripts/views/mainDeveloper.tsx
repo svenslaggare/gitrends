@@ -6,8 +6,11 @@ import {EntryType, EntryTypeSwitcher, Table} from "../helpers/view";
 import {capitalize, OnError, shortenName} from "../helpers/misc";
 import {MainDeveloperEntry} from "../model";
 import {HistogramChart} from "../helpers/charts";
+import {AppConfig} from "../config";
 
 interface MainDeveloperViewProps {
+    config: AppConfig;
+
     initialEntryType: EntryType
     onError: OnError;
 }
@@ -41,7 +44,7 @@ export class MainDeveloperView extends React.Component<MainDeveloperViewProps, M
         if (this.state.entryType == EntryType.File) {
             mainDeveloperEntries = [...this.state.mainDeveloperEntries]
                 .filter(entry => entry.net_added_lines > 100)
-                .slice(0, 100);
+                .slice(0, this.props.config.mainDeveloperMaxEntries);
         }
 
         return (
@@ -68,8 +71,8 @@ export class MainDeveloperView extends React.Component<MainDeveloperViewProps, M
                 <h3>Histogram</h3>
                 <HistogramChart
                     data={mainDeveloperHistogram}
-                    max={9}
-                    normalized={true}
+                    maxNumEntries={this.props.config.mainDeveloperHistogramMaxDevelopers}
+                    normalized={this.props.config.mainDeveloperHistogramNormalized}
                 />
 
                 <h3 style={{ marginTop: "1em" }}>{capitalize(this.entryTypeName())}s with highest singular ownership</h3>

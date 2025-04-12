@@ -6,8 +6,11 @@ import {GitLogEntry} from "../model";
 import {AlertBox, Conditional} from "../helpers/view";
 import {OnError} from "../helpers/misc";
 import humanizeDuration from "humanize-duration";
+import {AppConfig} from "../config";
 
 interface TimelineViewProps {
+    config: AppConfig;
+
     onError: OnError;
 }
 

@@ -4,11 +4,13 @@ import * as d3 from "d3";
 import axios from "axios";
 
 import {OnError} from "../helpers/misc";
-import {CommitSpreadEntry, Module} from "../model";
+import {CommitSpreadEntry} from "../model";
 import {EntryLegend, TABLEAU20} from "../helpers/charts";
-import {schemePaired, schemeSet3} from "d3-scale-chromatic";
+import {AppConfig} from "../config";
 
 interface CommitSpreadViewProps {
+    config: AppConfig;
+
     onError: OnError;
 }
 
@@ -48,8 +50,8 @@ export class CommitSpreadView extends React.Component<CommitSpreadViewProps, Com
             <div className="flex-center">
                 <StructureChart
                     commitSpreadEntries={this.state.commitSpreadEntries}
-                    maxAuthors={13}
-                    minNumCommits={10}
+                    maxAuthors={this.props.config.commitSpreadMaxAuthors}
+                    minNumModuleCommits={this.props.config.commitSpreadMinNumModuleCommits}
                 />
             </div>
         );
@@ -68,7 +70,13 @@ export class CommitSpreadView extends React.Component<CommitSpreadViewProps, Com
     }
 }
 
-function StructureChart({ commitSpreadEntries, maxAuthors, minNumCommits }: {  commitSpreadEntries: CommitSpreadEntry[]; maxAuthors: number; minNumCommits: number; }) {
+interface StructureChartProps {
+    commitSpreadEntries: CommitSpreadEntry[];
+    maxAuthors: number;
+    minNumModuleCommits: number;
+}
+
+function StructureChart({ commitSpreadEntries, maxAuthors, minNumModuleCommits }: StructureChartProps) {
     let width = 1500;
     let height = 900;
     let margin = 35;
@@ -127,7 +135,7 @@ function StructureChart({ commitSpreadEntries, maxAuthors, minNumCommits }: {  c
             });
         }
 
-        if (moduleNumRevisions < minNumCommits) {
+        if (moduleNumRevisions < minNumModuleCommits) {
             continue;
         }
 

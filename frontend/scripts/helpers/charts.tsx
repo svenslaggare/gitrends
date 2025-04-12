@@ -82,7 +82,7 @@ export function CodeComplexityTimeChart({ data }: { data: FileHistoryEntry[] }) 
     );
 }
 
-export function HistogramChart({ data, max, normalized }: { data: Map<string, number>; max: number; normalized: boolean }) {
+export function HistogramChart({ data, maxNumEntries, normalized }: { data: Map<string, number>; maxNumEntries: number; normalized: boolean }) {
     let width = 1200;
     let height = 600;
 
@@ -98,7 +98,7 @@ export function HistogramChart({ data, max, normalized }: { data: Map<string, nu
     orderedData.sort((a, b) => -(a[1] - b[1]));
     let total = d3.sum(orderedData, d => d[1]);
 
-    let maxIndex = Math.min(max, orderedData.length);
+    let maxIndex = Math.min(maxNumEntries, orderedData.length);
     let othersData = [...orderedData].slice(maxIndex);
     orderedData = orderedData.slice(0, maxIndex);
 

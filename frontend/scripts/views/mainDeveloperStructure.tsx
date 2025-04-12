@@ -6,8 +6,10 @@ import axios from "axios";
 import {OnError, shortenName} from "../helpers/misc";
 import {ShowSelectedFileModal} from "../helpers/selectedFileModal";
 import {CIRCLE_PACKING_COLOR, EntryLegend} from "../helpers/charts";
+import {AppConfig} from "../config";
 
 interface MainDeveloperStructureViewProps {
+    config: AppConfig;
     onError: OnError;
 }
 
@@ -56,6 +58,7 @@ export class MainDeveloperStructureView extends React.Component<MainDeveloperStr
                             this.showSelectedFileModal.current.show(fileName);
                         }
                     }}
+                    maxNumDevelopers={this.props.config.mainDeveloperStructureMaxDevelopers}
                 />
             </div>
         );
@@ -85,9 +88,10 @@ interface MainDeveloperTree {
 interface StructureChartProps {
     mainDeveloper: MainDeveloperTree;
     onFileSelect: (name: string, leaf: boolean) => void;
+    maxNumDevelopers: number;
 }
 
-function StructureChart({ mainDeveloper, onFileSelect }: StructureChartProps) {
+function StructureChart({ mainDeveloper, onFileSelect, maxNumDevelopers }: StructureChartProps) {
     let margin = 30;
     let outerDiameter = 900;
     let innerDiameter = outerDiameter - margin - margin;
@@ -142,7 +146,7 @@ function StructureChart({ mainDeveloper, onFileSelect }: StructureChartProps) {
         setFocus(focus.data == newFocus.data ? node.parent : newFocus);
     };
 
-    let developers = collectDevelopers(descendants, 9);
+    let developers = collectDevelopers(descendants, maxNumDevelopers);
     let developersSet = new Set<string>(developers);
     let developerColor = d3.scaleOrdinal(developers, d3.schemeTableau10);
 

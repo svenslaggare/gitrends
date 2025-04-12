@@ -6,10 +6,14 @@ import {EntryType, EntryTypeSwitcher, Table} from "../helpers/view";
 import {OnError} from "../helpers/misc";
 import {ShowSelectedFileModal} from "../helpers/selectedFileModal";
 import {AutoCompleteInput} from "../helpers/autoCompleteInput";
+import {AppConfig} from "../config";
 
 interface ChangeCouplingViewProps {
+    config: AppConfig;
+
     initialEntryType: EntryType
     onError: OnError;
+
     autoCompletionFiles: string[];
     autoCompletionModules: string[];
 }
@@ -143,7 +147,7 @@ export class ChangeCouplingView extends React.Component<ChangeCouplingViewProps,
 
 
     fetchAll() {
-        axios.get(`/api/${this.entryTypeName()}/change-coupling`)
+        axios.get(`/api/${this.entryTypeName()}/change-coupling?count=${this.props.config.changeCouplingMaxEntries}`)
             .then(response => {
                 this.setState({
                     allChangeCoupling: response.data

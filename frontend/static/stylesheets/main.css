@@ -149,3 +149,11 @@
     cursor: pointer;
     font-weight: bold;
 }
+
+.form-spacing {
+    margin-bottom: 1em;
+}
+
+.button-spacing {
+    margin-right: 0.5em;
+}

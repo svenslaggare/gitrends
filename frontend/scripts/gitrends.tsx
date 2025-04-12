@@ -3,6 +3,8 @@ import ReactDOM from 'react-dom'
 
 import {BrowserRouter as Router, Link, Route, Switch, useLocation} from "react-router-dom";
 
+import axios from "axios";
+
 import {ChangeCouplingView} from "./views/changeCoupling";
 import {HotspotView} from "./views/hotspot";
 import {HotspotAnalysisType, HotspotStructureView} from "./views/hotspotStructure";
@@ -12,11 +14,12 @@ import {TimelineView} from "./views/timeline";
 import {ChangeCouplingStructureView} from "./views/changeCouplingStructure";
 import {ModulesBreakdownType, ModulesView} from "./views/modules";
 import {HomeView} from "./views/home";
-import axios from "axios";
 import {MainDeveloperView} from "./views/mainDeveloper";
 import {MainDeveloperStructureView} from "./views/mainDeveloperStructure";
 import {CustomAnalysisView} from "./views/customAnalysis";
 import {CommitSpreadView} from "./views/commitSpread";
+import {AppConfig, loadPersistedConfig} from "./config";
+import {ConfigurationView} from "./views/configuration";
 
 interface ApplicationMainProps {
 
@@ -24,6 +27,9 @@ interface ApplicationMainProps {
 
 interface ApplicationMainState {
     errorMessage: string;
+
+    config: AppConfig;
+
     autoCompletionFiles: string[];
     autoCompletionModules: string[];
 }
@@ -34,6 +40,7 @@ class ApplicationMain extends React.Component<ApplicationMainProps, ApplicationM
 
         this.state = {
             errorMessage: null,
+            config: loadPersistedConfig(),
             autoCompletionFiles: [],
             autoCompletionModules: [],
         };
@@ -177,6 +184,16 @@ class ApplicationMain extends React.Component<ApplicationMainProps, ApplicationM
                                 </RenderLink>
                             </li>
                         </ul>
+
+                        <hr className="my-3"/>
+
+                        <ul className="nav flex-column mb-auto">
+                            <li className="nav-item">
+                                <Link className="nav-link d-flex align-items-center gap-2" to="/configuration">
+                                    <i className="fa-solid fa-gear" /> Configuration
+                                </Link>
+                            </li>
+                        </ul>
                     </div>
                 </div>
             </div>
@@ -194,7 +211,7 @@ class ApplicationMain extends React.Component<ApplicationMainProps, ApplicationM
 
                 <Switch>
                     <Route path="/timeline">
-                        <TimelineView onError={error => { this.setError(error); }} />
+                        <TimelineView config={this.state.config} onError={error => { this.setError(error); }} />
                     </Route>
                     <Route path="/modules">
                         <RenderModulesView self={this} />
@@ -218,10 +235,16 @@ class ApplicationMain extends React.Component<ApplicationMainProps, ApplicationM
                         <RenderMainDeveloperStructureView self={this} />
                     </Route>
                     <Route path="/commit-spread">
-                        <CommitSpreadView onError={error => { this.setError(error); }} />
+                        <CommitSpreadView config={this.state.config} onError={error => { this.setError(error); }} />
                     </Route>
                     <Route path="/custom-analysis">
                         <CustomAnalysisView onError={error => { this.setError(error); }} />
+                    </Route>
+                    <Route path="/configuration">
+                        <ConfigurationView
+                            config={this.state.config}
+                            changeConfig={newConfig => { this.setState({ config: newConfig }); }}
+                        />
                     </Route>
                     <Route path="/">
                         <HomeView onError={error => { this.setError(error); }} />
@@ -263,6 +286,7 @@ class ApplicationMain extends React.Component<ApplicationMainProps, ApplicationM
 function RenderModulesView({ self }: { self: ApplicationMain }) {
     return (
         <ModulesView
+            config={self.state.config}
             initialBreakdownType={getTypeFromHash(
                 useLocation().hash,
                 new Map([["code", ModulesBreakdownType.CodeLines], ["complexity", ModulesBreakdownType.Complexity]])
@@ -275,6 +299,7 @@ function RenderModulesView({ self }: { self: ApplicationMain }) {
 function RenderHotspotView({ self }: { self: ApplicationMain }) {
     return (
         <HotspotView
+            config={self.state.config}
             initialEntryType={getEntryType(useLocation().hash)}
             onError={error => { self.setError(error); }}
         />
@@ -284,6 +309,7 @@ function RenderHotspotView({ self }: { self: ApplicationMain }) {
 function RenderHotspotStructureView({ self }: { self: ApplicationMain }) {
     return (
         <HotspotStructureView
+            config={self.state.config}
             initialAnalysisType={getTypeFromHash(
                 useLocation().hash,
                 new Map([["revision", HotspotAnalysisType.Revision], ["author", HotspotAnalysisType.Author]])
@@ -296,6 +322,7 @@ function RenderHotspotStructureView({ self }: { self: ApplicationMain }) {
 function RenderChangeCouplingView({ self }: { self: ApplicationMain }) {
     return (
         <ChangeCouplingView
+            config={self.state.config}
             autoCompletionFiles={self.state.autoCompletionFiles}
             autoCompletionModules={self.state.autoCompletionModules}
             initialEntryType={getEntryType(useLocation().hash)}
@@ -307,6 +334,7 @@ function RenderChangeCouplingView({ self }: { self: ApplicationMain }) {
 function RenderChangeCouplingStructureView({ self }: { self: ApplicationMain }) {
     return (
         <ChangeCouplingStructureView
+            config={self.state.config}
             initialEntryType={getEntryType(useLocation().hash)}
             onError={error => { self.setError(error); }}
         />
@@ -316,6 +344,7 @@ function RenderChangeCouplingStructureView({ self }: { self: ApplicationMain }) 
 function RenderMainDeveloperView({ self }: { self: ApplicationMain }) {
     return (
         <MainDeveloperView
+            config={self.state.config}
             initialEntryType={getEntryType(useLocation().hash)}
             onError={error => { self.setError(error); }}
         />
@@ -325,6 +354,7 @@ function RenderMainDeveloperView({ self }: { self: ApplicationMain }) {
 function RenderMainDeveloperStructureView({ self }: { self: ApplicationMain }) {
     return (
         <MainDeveloperStructureView
+            config={self.state.config}
             onError={error => { self.setError(error); }}
         />
     );

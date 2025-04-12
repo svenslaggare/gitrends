@@ -5,8 +5,11 @@ import axios from "axios";
 
 import {OnError} from "../helpers/misc";
 import {EntryType, EntryTypeSwitcher} from "../helpers/view";
+import {AppConfig} from "../config";
 
 interface ChangeCouplingStructureViewProps {
+    config: AppConfig;
+
     initialEntryType: EntryType;
     onError: OnError;
 }

@@ -6,8 +6,11 @@ import {Hotspot} from "../model";
 import {EntryType, EntryTypeSwitcher, Table} from "../helpers/view";
 import {capitalize, OnError} from "../helpers/misc";
 import {ShowSelectedFileModal} from "../helpers/selectedFileModal";
+import {AppConfig} from "../config";
 
 interface HotspotViewProps {
+    config: AppConfig;
+
     initialEntryType: EntryType;
     onError: OnError;
 }
@@ -84,7 +87,7 @@ export class HotspotView extends React.Component<HotspotViewProps, HotspotViewSt
     }
 
     fetchAll() {
-        axios.get(`/api/${this.entryTypeName()}/hotspots`)
+        axios.get(`/api/${this.entryTypeName()}/hotspots?count=${this.props.config.hotspotsMaxEntries}`)
             .then(response => {
                 this.setState({
                     hotspots: response.data

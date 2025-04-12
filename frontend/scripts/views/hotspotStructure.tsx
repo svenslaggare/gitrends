@@ -7,6 +7,7 @@ import {OnError} from "../helpers/misc";
 import {ShowSelectedFileModal} from "../helpers/selectedFileModal";
 import {TypeSwitcher} from "../helpers/view";
 import {CIRCLE_PACKING_COLOR} from "../helpers/charts";
+import {AppConfig} from "../config";
 
 export enum HotspotAnalysisType {
     Revision,
@@ -14,6 +15,8 @@ export enum HotspotAnalysisType {
 }
 
 interface HotspotStructureViewProps {
+    config: AppConfig;
+
     initialAnalysisType: HotspotAnalysisType;
     onError: OnError;
 }

@@ -11,6 +11,7 @@ import {OnError} from "../helpers/misc";
 import {Module} from "../model";
 import {AlertBox, TypeSwitcher} from "../helpers/view";
 import {EntryLegend, TABLEAU20} from "../helpers/charts";
+import {AppConfig} from "../config";
 
 export enum ModulesBreakdownType {
     CodeLines,
@@ -18,6 +19,8 @@ export enum ModulesBreakdownType {
 }
 
 interface ModulesViewProps {
+    config: AppConfig;
+
     initialBreakdownType: ModulesBreakdownType;
     onError: OnError;
 }

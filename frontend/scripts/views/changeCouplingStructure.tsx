@@ -162,6 +162,8 @@ function StructureChart({ changeCouplingTree }: { changeCouplingTree: ChangeCoup
             target.textRef.current.setAttribute("fill", targetHovered ? textHoveredColor : textNormalColor);
             target.textRef.current.style.fontWeight = targetHovered ? "bold" : "";
 
+            let mixBlendMode = hoveredNode != null ? null : pathBlendMode;
+
             for (let ref of (source.pathRefs ?? [])) {
                 let edgeIndex = ref.current.dataset.edgeIndex;
                 if (updatedEdges.has(edgeIndex)) {
@@ -170,7 +172,7 @@ function StructureChart({ changeCouplingTree }: { changeCouplingTree: ChangeCoup
 
                 updatedEdges.add(edgeIndex);
 
-                ref.current.style.mixBlendMode = hoveredNode != null ? null : pathBlendMode;
+                ref.current.style.mixBlendMode = mixBlendMode;
                 ref.current.setAttribute("stroke", sourceHovered ? pathHoveredColor : pathNormalColor);
 
                 if (sourceHovered) {

@@ -5,7 +5,7 @@ import axios from "axios";
 
 import {OnError, shortenName} from "../helpers/misc";
 import {ShowSelectedFileModal} from "../helpers/selectedFileModal";
-import {CIRCLE_PACKING_COLOR, EntryLegend} from "../helpers/charts";
+import {CIRCLE_PACKING_COLOR, EntryLegend, TABLEAU20} from "../helpers/charts";
 import {AppConfig} from "../config";
 
 interface MainDeveloperStructureViewProps {
@@ -148,7 +148,7 @@ function StructureChart({ mainDeveloper, onFileSelect, maxNumDevelopers }: Struc
 
     let developers = collectDevelopers(descendants, maxNumDevelopers);
     let developersSet = new Set<string>(developers);
-    let developerColor = d3.scaleOrdinal(developers, d3.schemeTableau10);
+    let developerColor = d3.scaleOrdinal(developers, TABLEAU20);
 
     let depthColor = CIRCLE_PACKING_COLOR;
 
@@ -170,8 +170,9 @@ function StructureChart({ mainDeveloper, onFileSelect, maxNumDevelopers }: Struc
             <EntryLegend
                 x={0}
                 y={20}
-                values={developers.map(developer => shortenName(developer))}
+                values={developers}
                 color={developerColor}
+                transformValue={value => shortenName(value)}
             />
 
             <g transform={`translate(0, ${margin + 20})`}>

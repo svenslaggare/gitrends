@@ -186,14 +186,23 @@ export function HistogramChart({ data, maxNumEntries, normalized }: { data: Map<
     );
 }
 
-export function EntryLegend({ x, y, values, color }: { x: number; y: number; values: string[], color: (name: string) => string }) {
+export interface EntryLegendProps {
+    x: number;
+    y: number;
+    values: string[],
+    color: (name: string) => string
+    transformValue?: (name: string) => string
+}
+
+export function EntryLegend({ x, y, values, color, transformValue }: EntryLegendProps) {
     return (
         <text x={x} y={y}>
             {
                 values.map((value, valueIndex) =>
                     [
-                        <tspan key={valueIndex * 2} fill={color(value)} fontSize="20px">■ </tspan>,
-                        <tspan key={valueIndex * 2 + 1} fill="white">{value} </tspan>
+                        <tspan key={valueIndex * 3 + 0} fill={color(value)} fontSize="20px">■ </tspan>,
+                        <tspan key={valueIndex * 3 + 1} fill="white">{transformValue != null ? transformValue(value) : value} </tspan>,
+                        <tspan key={valueIndex * 3 + 2} fontSize="6px"> </tspan>
                     ]
                 )
             }

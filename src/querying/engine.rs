@@ -41,7 +41,7 @@ impl RepositoryQuerying {
         let ctx = SessionContext::new();
 
         ctx.register_parquet(
-            "git_log",
+            "raw_git_log",
             data_directory.join(GIT_LOG_PATH).to_str().unwrap(),
             ParquetReadOptions::default()
         ).await?;
@@ -53,6 +53,18 @@ impl RepositoryQuerying {
         ).await?;
 
         custom_functions::add(data_directory, &ctx)?;
+
+        ctx.sql(
+            r#"
+            CREATE VIEW git_log AS
+            SELECT
+                revision,
+                date,
+                normalize_author(author) AS author,
+                commit_message
+            FROM raw_git_log
+            "#
+        ).await?;
 
         ctx.sql(
             &format!(
@@ -95,7 +107,7 @@ impl RepositoryQuerying {
             SELECT
                 extract_module_name(file_name) AS module_name,
                 COUNT(DISTINCT git_file_entries.revision) AS num_revisions,
-                COUNT(DISTINCT normalize_author(git_log.author)) AS num_authors
+                COUNT(DISTINCT git_log.author) AS num_authors
             FROM git_file_entries
             INNER JOIN git_log ON git_log.revision = git_file_entries.revision
             GROUP BY extract_module_name(file_name)
@@ -144,7 +156,7 @@ impl RepositoryQuerying {
                 file_name,
 
                 COUNT(git_file_entries.revision) AS num_revisions,
-                COUNT(DISTINCT normalize_author(author)) AS num_authors,
+                COUNT(DISTINCT author) AS num_authors,
 
                 LAST_VALUE(num_code_lines ORDER BY git_file_entries.date) AS num_code_lines,
                 LAST_VALUE(num_comment_lines ORDER BY git_file_entries.date) AS num_comment_lines,
@@ -213,12 +225,12 @@ impl RepositoryQuerying {
             CREATE VIEW file_developers AS
             SELECT
                 file_name,
-                normalize_author(author) AS author,
+                author,
                 SUM(GREATEST(added_lines - removed_lines, 0)) AS net_added_lines
             FROM git_file_entries
             INNER JOIN
                 git_log ON git_log.revision = git_file_entries.revision
-            GROUP BY file_name, normalize_author(author)
+            GROUP BY file_name, author
             "#
         ).await?;
 
@@ -273,12 +285,12 @@ impl RepositoryQuerying {
             SELECT
                 FIRST_VALUE(revision ORDER BY date) AS first_revision,
                 FIRST_VALUE(date ORDER BY date) AS first_date,
-                FIRST_VALUE(normalize_author(author) ORDER BY date) AS first_author,
+                FIRST_VALUE(author ORDER BY date) AS first_author,
                 FIRST_VALUE(commit_message ORDER BY date) AS first_commit_message,
 
                 LAST_VALUE(revision ORDER BY date) AS last_revision,
                 LAST_VALUE(date ORDER BY date) AS last_date,
-                LAST_VALUE(normalize_author(author) ORDER BY date) AS last_author,
+                LAST_VALUE(author ORDER BY date) AS last_author,
                 LAST_VALUE(commit_message ORDER BY date) AS lastcommit_message
             FROM git_log
             "#
@@ -316,10 +328,10 @@ impl RepositoryQuerying {
         let result_df = self.ctx.sql(
             r#"
             SELECT
-                normalize_author(author) AS name,
+                author AS name,
                 COUNT(*) AS num_revisions
             FROM git_log
-            GROUP BY normalize_author(author)
+            GROUP BY author
             ORDER BY num_revisions DESC LIMIT 10
             "#
         ).await?;
@@ -374,7 +386,7 @@ impl RepositoryQuerying {
         let result_df = self.ctx.sql(
             r#"
             SELECT
-                revision, date, normalize_author(author), commit_message
+                revision, date, author, commit_message
             FROM git_log
             ORDER BY date;
             "#
@@ -677,11 +689,11 @@ impl RepositoryQuerying {
                 r#"
                 SELECT
                     module_name,
-                    normalize_author(author) AS author,
+                    author,
                     COUNT(git_module_entries.revision) AS num_revisions
                 FROM git_module_entries
                 INNER JOIN git_log ON git_log.revision = git_module_entries.revision
-                GROUP BY module_name, normalize_author(author)
+                GROUP BY module_name, author
                 ORDER BY module_name, num_revisions DESC
                 "#
             )

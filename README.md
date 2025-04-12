@@ -85,8 +85,6 @@ The `authors.txt` file in the `data_dir` allows you to normalize the authors of 
 antjans => Anton Jansson
 ```
 
-When writing custom analysis, the function `normalize_author` can then be used to normalize the raw commit names.
-
 ## How to build
 Requirements:
 * `cargo` (https://rustup.rs/)

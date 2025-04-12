@@ -100,8 +100,13 @@ pub struct Hotspot {
     pub name: String,
     pub num_revisions: u64,
     pub num_authors: u64,
+
     pub num_code_lines: u64,
-    pub total_indent_levels: u64
+    pub num_comment_lines: u64,
+    pub num_blank_lines: u64,
+
+    pub total_indent_levels: u64,
+    pub avg_indent_levels: f64
 }
 
 impl Display for Hotspot {

@@ -115,15 +115,20 @@ impl FromRow for FileHistoryEntry {
 }
 
 impl FromRow for Hotspot {
-    const NUM_COLUMNS: usize = 5;
+    const NUM_COLUMNS: usize = 8;
 
     fn from_row(columns: &[&ArrayRef], row_index: usize, base_column_index: usize) -> Hotspot {
         Hotspot {
             name: columns[base_column_index].as_string_view().value(row_index).to_owned(),
             num_revisions: columns[base_column_index + 1].as_primitive::<Int64Type>().value(row_index) as u64,
             num_authors: columns[base_column_index + 2].as_primitive::<Int64Type>().value(row_index) as u64,
+
             num_code_lines: columns[base_column_index + 3].as_primitive::<UInt64Type>().value(row_index),
-            total_indent_levels: columns[base_column_index + 4].as_primitive::<UInt64Type>().value(row_index)
+            num_comment_lines: columns[base_column_index + 4].as_primitive::<UInt64Type>().value(row_index),
+            num_blank_lines: columns[base_column_index + 5].as_primitive::<UInt64Type>().value(row_index),
+
+            total_indent_levels: columns[base_column_index + 6].as_primitive::<UInt64Type>().value(row_index),
+            avg_indent_levels: columns[base_column_index + 7].as_primitive::<Float64Type>().value(row_index)
         }
     }
 }

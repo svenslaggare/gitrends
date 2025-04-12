@@ -138,6 +138,9 @@ export class ModulesView extends React.Component<ModulesViewProps, ModulesViewSt
                     breakdownType={this.state.breakdownType}
                     modules={this.state.modules}
                 />
+
+                <br />
+                <br />
             </div>
         );
     }
@@ -184,7 +187,7 @@ export class ModulesView extends React.Component<ModulesViewProps, ModulesViewSt
 function StructureChart({ breakdownType, modules }: { breakdownType: ModulesBreakdownType; modules: Module[] }) {
     let width = 1500;
     let height = 900;
-    let margin = 35;
+    let margin = 55;
 
     interface Tree {
         name: string;

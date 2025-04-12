@@ -195,18 +195,37 @@ export interface EntryLegendProps {
 }
 
 export function EntryLegend({ x, y, values, color, transformValue }: EntryLegendProps) {
+    const entriesPerRow = 20;
+    let rows: string[][] = [];
+    let currentRow: string[] = []
+    for (let value of values) {
+        currentRow.push(value);
+
+        if (currentRow.length == entriesPerRow) {
+            rows.push(currentRow);
+            currentRow = [];
+        }
+    }
+    rows.push(currentRow);
+
     return (
-        <text x={x} y={y}>
+        <g>
             {
-                values.map((value, valueIndex) =>
-                    [
-                        <tspan key={valueIndex * 3 + 0} fill={color(value)} fontSize="20px">■ </tspan>,
-                        <tspan key={valueIndex * 3 + 1} fill="white">{transformValue != null ? transformValue(value) : value} </tspan>,
-                        <tspan key={valueIndex * 3 + 2} fontSize="6px"> </tspan>
-                    ]
+                rows.map((row, rowIndex) =>
+                    <text key={rowIndex} x={x} y={y + rowIndex * 23}>
+                        {
+                            row.map((value, valueIndex) =>
+                                [
+                                    <tspan key={valueIndex * 3 + 0} fill={color(value)} fontSize="20px">■ </tspan>,
+                                    <tspan key={valueIndex * 3 + 1} fill="white">{transformValue != null ? transformValue(value) : value} </tspan>,
+                                    <tspan key={valueIndex * 3 + 2} fontSize="6px"> </tspan>
+                                ]
+                            )
+                        }
+                    </text>
                 )
             }
-        </text>
+        </g>
     );
 }
 

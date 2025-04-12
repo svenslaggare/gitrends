@@ -37,4 +37,9 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: gitrends_frontend_static
-          path: frontend/static
+          path: |
+            frontend
+            !frontend/yarn.lock
+            !frontend/*.json
+            !frontend/*.js
+            !frontend/*.sh

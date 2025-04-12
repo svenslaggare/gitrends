@@ -7,6 +7,7 @@ import {capitalize, OnError, shortenName} from "../helpers/misc";
 import {MainDeveloperEntry} from "../model";
 import {HistogramChart} from "../helpers/charts";
 import {AppConfig} from "../config";
+import {ShowSelectedFileModal} from "../helpers/selectedFileModal";
 
 interface MainDeveloperViewProps {
     config: AppConfig;
@@ -21,6 +22,8 @@ interface MainDeveloperViewState {
 }
 
 export class MainDeveloperView extends React.Component<MainDeveloperViewProps, MainDeveloperViewState> {
+    showSelectedFileModal = React.createRef<ShowSelectedFileModal>();
+
     constructor(props) {
         super(props);
 
@@ -49,6 +52,8 @@ export class MainDeveloperView extends React.Component<MainDeveloperViewProps, M
 
         return (
             <div>
+                <ShowSelectedFileModal ref={this.showSelectedFileModal} onError={this.props.onError} />
+
                 <div className="pt-3 pb-2 mb-3 border-bottom">
                     <EntryTypeSwitcher
                         current={this.state.entryType}
@@ -79,7 +84,11 @@ export class MainDeveloperView extends React.Component<MainDeveloperViewProps, M
 
                 <Table
                     columns={[
-                        { name: "name", display: `${capitalize(this.entryTypeName())} name`, clickable: false },
+                        {
+                            name: "name",
+                            display: `${capitalize(this.entryTypeName())} name`,
+                            clickable: this.state.entryType == EntryType.File
+                        },
                         { name: "main_developer", display: "Main developer", clickable: false },
                         { name: "ownership", display: "Ownership (%)", clickable: false },
                         { name: "net_added_lines", display: "Net added lines", clickable: false },
@@ -91,6 +100,11 @@ export class MainDeveloperView extends React.Component<MainDeveloperViewProps, M
                             return Math.round(100.0 * (row["net_added_lines"] / row["total_net_added_lines"]) * 10.0) / 10.0;
                         } else {
                             return row[name];
+                        }
+                    }}
+                    onValueClick={(row, column) => {
+                        if (column == "name") {
+                            this.showSelectedFileModal.current.show(row[column]);
                         }
                     }}
                     initialSortOrder={{ columnIndex: 2, order: -1 }}

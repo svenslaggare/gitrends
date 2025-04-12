@@ -43,3 +43,5 @@ jobs:
             !frontend/*.json
             !frontend/*.js
             !frontend/*.sh
+            !frontend/node_modules
+            !frontend/scripts

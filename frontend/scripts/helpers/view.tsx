@@ -72,7 +72,7 @@ interface TableProps {
     columns: TableColumn[];
     rows: any[];
     extractColumn: (row: any, name: string) => any;
-    onValueClick?: (rowIndex: number, column: string) => void;
+    onValueClick?: (row: any, column: string) => void;
     initialSortOrder: TableSortOrder;
 }
 
@@ -140,7 +140,7 @@ export class Table extends React.Component<TableProps, TableState> {
                                             className={`${column.clickable ? "clickable-column" : ""}`}
                                             onClick={() => {
                                                 if (column.clickable) {
-                                                    this.props?.onValueClick(rowIndex, column.name);
+                                                    this.props?.onValueClick(rows[rowIndex], column.name);
                                                 }
                                             }}
                                         >

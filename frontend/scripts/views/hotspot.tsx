@@ -72,9 +72,9 @@ export class HotspotView extends React.Component<HotspotViewProps, HotspotViewSt
                     ]}
                     rows={this.state.hotspots}
                     extractColumn={(row, name) => row[name]}
-                    onValueClick={(rowIndex, column) => {
+                    onValueClick={(row, column) => {
                         if (column == "name") {
-                            this.showSelectedFileModal.current.show(this.state.hotspots[rowIndex][column]);
+                            this.showSelectedFileModal.current.show(row[column]);
                         }
                     }}
                     initialSortOrder={{

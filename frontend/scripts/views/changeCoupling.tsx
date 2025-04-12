@@ -112,10 +112,10 @@ export class ChangeCouplingView extends React.Component<ChangeCouplingViewProps,
                     ]}
                     rows={changeCoupling}
                     extractColumn={(row: ChangeCoupling, name: string) => changeCouplingTableRow(row, name)}
-                    onValueClick={(rowIndex, column) => {
+                    onValueClick={(row, column) => {
                         switch (column) {
                             case "left_name":
-                                let newName = changeCoupling[rowIndex][column];
+                                let newName = row[column];
                                 if (this.state.selectedName == newName && this.state.entryType == EntryType.File) {
                                     this.showSelectedFileModal.current.show(newName);
                                 } else {
@@ -124,7 +124,7 @@ export class ChangeCouplingView extends React.Component<ChangeCouplingViewProps,
 
                                 break;
                             case "right_name":
-                                this.fetchForEntry(changeCoupling[rowIndex][column]);
+                                this.fetchForEntry(row[column]);
                                 break;
                         }
                     }}

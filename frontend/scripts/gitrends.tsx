@@ -6,8 +6,8 @@ import {BrowserRouter as Router, Link, Route, Switch, useLocation} from "react-r
 import axios from "axios";
 
 import {ChangeCouplingView} from "./views/changeCoupling";
-import {HotspotView} from "./views/hotspot";
-import {HotspotAnalysisType, HotspotStructureView} from "./views/hotspotStructure";
+import {HotspotsView} from "./views/hotspots";
+import {HotspotsAnalysisType, HotspotsStructureView} from "./views/hotspotsStructure";
 import {AlertBox, EntryType} from "./helpers/view";
 import {getErrorMessage} from "./helpers/misc";
 import {TimelineView} from "./views/timeline";
@@ -217,10 +217,10 @@ class ApplicationMain extends React.Component<ApplicationMainProps, ApplicationM
                         <RenderModulesView self={this} />
                     </Route>
                     <Route path="/hotspots">
-                        <RenderHotspotView self={this} />
+                        <RenderHotspotsView self={this} />
                     </Route>
                     <Route path="/hotspots-structure">
-                        <RenderHotspotStructureView self={this} />
+                        <RenderHotspotsStructureView self={this} />
                     </Route>
                     <Route path="/change-coupling">
                         <RenderChangeCouplingView self={this} />
@@ -296,9 +296,9 @@ function RenderModulesView({ self }: { self: ApplicationMain }) {
     )
 }
 
-function RenderHotspotView({ self }: { self: ApplicationMain }) {
+function RenderHotspotsView({ self }: { self: ApplicationMain }) {
     return (
-        <HotspotView
+        <HotspotsView
             config={self.state.config}
             initialEntryType={getEntryType(useLocation().hash)}
             onError={error => { self.setError(error); }}
@@ -306,13 +306,13 @@ function RenderHotspotView({ self }: { self: ApplicationMain }) {
     )
 }
 
-function RenderHotspotStructureView({ self }: { self: ApplicationMain }) {
+function RenderHotspotsStructureView({ self }: { self: ApplicationMain }) {
     return (
-        <HotspotStructureView
+        <HotspotsStructureView
             config={self.state.config}
             initialAnalysisType={getTypeFromHash(
                 useLocation().hash,
-                new Map([["revision", HotspotAnalysisType.Revision], ["author", HotspotAnalysisType.Author]])
+                new Map([["revision", HotspotsAnalysisType.Revision], ["author", HotspotsAnalysisType.Author]])
             )}
             onError={error => { self.setError(error); }}
         />

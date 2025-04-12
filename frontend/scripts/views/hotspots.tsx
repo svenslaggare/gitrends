@@ -8,19 +8,19 @@ import {capitalize, OnError} from "../helpers/misc";
 import {ShowSelectedFileModal} from "../helpers/selectedFileModal";
 import {AppConfig} from "../config";
 
-interface HotspotViewProps {
+interface HotspotsViewProps {
     config: AppConfig;
 
     initialEntryType: EntryType;
     onError: OnError;
 }
 
-interface HotspotViewState {
+interface HotspotsViewState {
     entryType: EntryType;
     hotspots: Hotspot[];
 }
 
-export class HotspotView extends React.Component<HotspotViewProps, HotspotViewState> {
+export class HotspotsView extends React.Component<HotspotsViewProps, HotspotsViewState> {
     showSelectedFileModal = React.createRef<ShowSelectedFileModal>();
 
     constructor(props) {

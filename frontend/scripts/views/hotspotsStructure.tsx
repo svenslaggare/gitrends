@@ -9,31 +9,31 @@ import {TypeSwitcher} from "../helpers/view";
 import {CIRCLE_PACKING_COLOR} from "../helpers/charts";
 import {AppConfig} from "../config";
 
-export enum HotspotAnalysisType {
+export enum HotspotsAnalysisType {
     Revision,
     Author
 }
 
-interface HotspotStructureViewProps {
+interface HotspotsStructureViewProps {
     config: AppConfig;
 
-    initialAnalysisType: HotspotAnalysisType;
+    initialAnalysisType: HotspotsAnalysisType;
     onError: OnError;
 }
 
-interface HotspotStructureViewState {
-    analysisType: HotspotAnalysisType;
+interface HotspotsStructureViewState {
+    analysisType: HotspotsAnalysisType;
     hotspotTree: HotspotTree;
 }
 
-export class HotspotStructureView extends React.Component<HotspotStructureViewProps, HotspotStructureViewState> {
+export class HotspotsStructureView extends React.Component<HotspotsStructureViewProps, HotspotsStructureViewState> {
     showSelectedFileModal = React.createRef<ShowSelectedFileModal>();
 
     constructor(props) {
         super(props);
 
         this.state = {
-            analysisType: this.props.initialAnalysisType ?? HotspotAnalysisType.Revision,
+            analysisType: this.props.initialAnalysisType ?? HotspotsAnalysisType.Revision,
             hotspotTree: null
         }
 
@@ -48,8 +48,8 @@ export class HotspotStructureView extends React.Component<HotspotStructureViewPr
                 <div className="pt-3 pb-2 mb-3 border-bottom">
                     <TypeSwitcher
                         types={new Map([
-                            [HotspotAnalysisType.Revision, { name: "revision", display: "Revision", iconClassName: "fa-solid fa-code-commit" }],
-                            [HotspotAnalysisType.Author, { name: "author", display: "Author", iconClassName: "fa-regular fa-user" }]
+                            [HotspotsAnalysisType.Revision, { name: "revision", display: "Revision", iconClassName: "fa-solid fa-code-commit" }],
+                            [HotspotsAnalysisType.Author, { name: "author", display: "Author", iconClassName: "fa-regular fa-user" }]
                         ])}
                         current={this.state.analysisType}
                         onChange={analysisType => {
@@ -108,7 +108,7 @@ interface HotspotTree {
 }
 
 interface StructureChartProps {
-    analysisType: HotspotAnalysisType;
+    analysisType: HotspotsAnalysisType;
     hotspotTree: HotspotTree;
     onFileSelect: (name: string, leaf: boolean) => void;
 }
@@ -174,12 +174,12 @@ function StructureChart({ analysisType, hotspotTree, onFileSelect }: StructureCh
 
     let weight: (node: Node) => number;
     switch (analysisType) {
-        case HotspotAnalysisType.Revision:
+        case HotspotsAnalysisType.Revision:
             weight = (node: Node) => {
                 return node.data?.revision_weight;
             };
             break;
-        case HotspotAnalysisType.Author:
+        case HotspotsAnalysisType.Author:
             weight = (node: Node) => {
                 return node.data?.author_weight;
             };

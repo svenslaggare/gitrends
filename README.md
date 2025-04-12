@@ -76,7 +76,7 @@ The `authors.txt` file in the `data_dir` allows you to transform name of authors
 antjans => Anton Jansson
 ```
 
-The function `normalize_author` allows you to normalize any author when you write custom analysis.
+The function `normalize_author` allows you to normalize any author as defined above when writing custom analysis.
 
 ## How to build
 Requirements:

@@ -7,7 +7,7 @@ use datafusion::arrow::array::{Array, AsArray};
 use datafusion::arrow::datatypes::{Int64Type, UInt64Type};
 use datafusion::common::ScalarValue;
 use datafusion::prelude::*;
-
+use log::warn;
 use crate::indexing::indexer::GitLogEntry;
 use crate::querying::{custom_functions, QueryingResult};
 use crate::querying::helpers::{add_optional_limit, collect_rows, collect_rows_into, yield_rows, FromRow};
@@ -708,7 +708,7 @@ impl RepositoryQuerying {
                             columns.push(column_def.name().to_owned());
                         }
                     } else {
-                        println!("Warning: unsupported type '{}'", column.data_type())
+                        warn!("Unsupported type '{}'", column.data_type())
                     }
                 }
 

@@ -14,6 +14,7 @@ use axum::routing::{get, post, put};
 use axum::extract::{Path, Query, State};
 
 use askama::Template;
+use log::info;
 use serde_json::json;
 use tokio::net::TcpListener;
 use tokio::signal;
@@ -97,7 +98,7 @@ pub async fn main(config: WebAppConfig) {
 
     let address = config.listen.unwrap_or_else(|| SocketAddr::from_str("127.0.0.1:9000").unwrap());
     let listener = TcpListener::bind(&address).await.unwrap();
-    println!("Listening on http://{}", address);
+    info!("Listening on http://{}", address);
 
     // axum::serve(listener, app).await.unwrap();
     tokio::select! {

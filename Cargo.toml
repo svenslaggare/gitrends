@@ -18,6 +18,9 @@ thiserror = "2"
 chrono = { version = "0.4", features=["serde"] }
 arc-swap = "1"
 
+log = "0.4"
+fern = "0.7"
+
 git2 = "0.20"
 
 regex = "1"

@@ -7,7 +7,7 @@ use thiserror::Error;
 use serde::Serialize;
 
 use git2::{Commit, ObjectType, Oid, Repository, TreeWalkMode, TreeWalkResult};
-
+use log::{debug, info};
 use parquet::errors::ParquetError;
 use parquet::file::properties::{WriterProperties, WriterPropertiesPtr};
 use parquet::file::writer::SerializedFileWriter;
@@ -54,7 +54,7 @@ pub fn try_index_repository(repository: &Path, output_directory: &Path) -> Resul
 pub fn index_repository(repository: &Path, output_directory: &Path) -> Result<(), IndexError> {
     let t0 = Instant::now();
 
-    println!("Indexing repository...");
+    info!("Indexing repository...");
     if !output_directory.exists() {
         std::fs::create_dir_all(output_directory)?;
     }
@@ -128,7 +128,7 @@ pub fn index_repository(repository: &Path, output_directory: &Path) -> Result<()
     git_log_writer.close()?;
     git_entries_writer.close()?;
 
-    println!("Indexing done (took {:.1} seconds).", t0.elapsed().as_secs_f64());
+    info!("Indexing done (took {:.1} seconds).", t0.elapsed().as_secs_f64());
 
     Ok(())
 }
@@ -137,20 +137,20 @@ fn add_log_entry(git_log_writer: &mut SerializedFileWriter<File>, commit: &Commi
     let short_commit_hash = commit.as_object().short_id()?.as_str().unwrap().to_owned();
     let commit_time = commit.time().to_date_time().unwrap();
 
-    // let parents_str = commit
-    //     .parents()
-    //     .map(|parent| parent.as_object().short_id().unwrap().as_str().unwrap().to_owned())
-    //     .collect::<Vec<_>>()
-    //     .join(", ");
+    let parents_str = commit
+        .parents()
+        .map(|parent| parent.as_object().short_id().unwrap().as_str().unwrap().to_owned())
+        .collect::<Vec<_>>()
+        .join(", ");
 
-    // const DATETIME_FORMAT: &str = "%Y-%m-%d %H:%M:%S";
-    // println!(
-    //     "{} ({}) ({}): {}",
-    //     short_commit_hash,
-    //     parents_str,
-    //     commit_time.format(DATETIME_FORMAT),
-    //     commit.message().unwrap_or("").trim().replace("\n", " ")
-    // );
+    const DATETIME_FORMAT: &str = "%Y-%m-%d %H:%M:%S";
+    debug!(
+        "{} ({}) ({}): {}",
+        short_commit_hash,
+        parents_str,
+        commit_time.format(DATETIME_FORMAT),
+        commit.message().unwrap_or("").trim().replace("\n", " ")
+    );
 
     let mut row_group = git_log_writer.next_row_group()?;
     vec![
@@ -197,8 +197,6 @@ fn index_commit(
         None,
         Some(
             &mut |diff, _, line| {
-                // println!("{}: {} -> {}",  diff.new_file().path().unwrap().display(), line.old_lineno().unwrap_or(0), line.new_lineno().unwrap_or(0));
-
                 if let Some(file_path) = diff.new_file().path().map(|x| x.to_str()).flatten() {
                     let is_added = line.old_lineno().is_none();
 
@@ -229,11 +227,11 @@ fn index_commit(
             continue;
         }
 
-        // println!(
-        //     "\t{} ({:?})",
-        //     file_path.display(),
-        //     delta.status()
-        // );
+        debug!(
+            "\t{} ({:?})",
+            file_path.display(),
+            delta.status()
+        );
 
         let file_entry = file_entry.map(|entry| entry.to_object(&repository).ok()).flatten();
         let content = file_entry.as_ref()
@@ -244,17 +242,17 @@ fn index_commit(
         let file_extension = file_path.extension().map(|x| x.to_str()).flatten().unwrap_or("unknown");
         let source_code_stats = content.map(|content| calculate_source_code_stats(file_extension, content));
 
-        // println!("\t\t{:?}", source_code_stats);
+        debug!("\t\t{:?}", source_code_stats);
 
         if let Some(source_stats) = source_code_stats {
             indexed_files.insert(index_key);
-            // println!(
-            //     "{}, {}: {}, {}",
-            //      short_commit_hash,
-            //     file_path_str,
-            //     added_lines.get(&file_path_str).cloned().unwrap_or(0),
-            //     removed_lines.get(&file_path_str).cloned().unwrap_or(0)
-            // );
+            debug!(
+                "\t{}, {}: {}, {}",
+                 short_commit_hash,
+                file_path_str,
+                added_lines.get(&file_path_str).cloned().unwrap_or(0),
+                removed_lines.get(&file_path_str).cloned().unwrap_or(0)
+            );
 
             git_file_entries.push(
                 GitFileEntry {

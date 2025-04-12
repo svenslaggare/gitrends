@@ -1,13 +1,16 @@
 use std::collections::{BTreeMap, HashMap};
 use std::path::{Path, PathBuf};
 
+use log::warn;
+
 use serde::{Deserialize, Serialize};
 
 use datafusion::arrow::array::{Array, AsArray};
 use datafusion::arrow::datatypes::{Int64Type, UInt64Type};
 use datafusion::common::ScalarValue;
 use datafusion::prelude::*;
-use log::warn;
+
+use crate::indexing::{GIT_FILE_ENTRIES_PATH, GIT_LOG_PATH};
 use crate::indexing::indexer::GitLogEntry;
 use crate::querying::{custom_functions, QueryingResult};
 use crate::querying::helpers::{add_optional_limit, collect_rows, collect_rows_into, yield_rows, FromRow};
@@ -39,13 +42,13 @@ impl RepositoryQuerying {
 
         ctx.register_parquet(
             "git_log",
-            data_directory.join("git_log.parquet").to_str().unwrap(),
+            data_directory.join(GIT_LOG_PATH).to_str().unwrap(),
             ParquetReadOptions::default()
         ).await?;
 
         ctx.register_parquet(
             "all_git_file_entries",
-            data_directory.join("git_file_entries.parquet").to_str().unwrap(),
+            data_directory.join(GIT_FILE_ENTRIES_PATH).to_str().unwrap(),
             ParquetReadOptions::default()
         ).await?;
 

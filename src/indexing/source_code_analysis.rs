@@ -69,6 +69,10 @@ pub fn calculate_source_code_stats(file_extension: &str, content: &str) -> Sourc
     let total_indent_levels_f64 = total_indent_levels as f64;
     let num_code_lines_f64 = num_code_lines as f64;
 
+    let std_indent_levels =
+        (square_total_indent_levels as f64 - (total_indent_levels_f64 * total_indent_levels_f64) / num_code_lines_f64)
+        / num_code_lines_f64;
+
     SourceCodeStats {
         num_code_lines,
         num_comment_lines,
@@ -76,7 +80,7 @@ pub fn calculate_source_code_stats(file_extension: &str, content: &str) -> Sourc
 
         total_indent_levels,
         avg_indent_levels: total_indent_levels_f64 / num_code_lines_f64,
-        std_indent_levels: (square_total_indent_levels as f64 - (total_indent_levels_f64 * total_indent_levels_f64) / num_code_lines_f64) / num_code_lines_f64
+        std_indent_levels
     }
 }
 

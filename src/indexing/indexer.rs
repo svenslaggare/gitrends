@@ -2,18 +2,22 @@ use std::collections::{HashMap, HashSet};
 use std::fs::{File};
 use std::path::Path;
 use std::time::Instant;
+
 use chrono::{DateTime, FixedOffset, TimeZone, Utc};
 use thiserror::Error;
+use log::{debug, info};
+
 use serde::Serialize;
 
 use git2::{Commit, ObjectType, Oid, Repository, TreeWalkMode, TreeWalkResult};
-use log::{debug, info};
+
 use parquet::errors::ParquetError;
 use parquet::file::properties::{WriterProperties, WriterPropertiesPtr};
 use parquet::file::writer::SerializedFileWriter;
 use parquet::record::RecordWriter;
 use parquet_derive::{ParquetRecordWriter};
 
+use crate::indexing::{GIT_FILE_ENTRIES_PATH, GIT_LOG_PATH};
 use crate::indexing::source_code_analysis::calculate_source_code_stats;
 
 #[derive(Default, Debug, ParquetRecordWriter, Serialize)]
@@ -44,7 +48,7 @@ pub struct GitFileEntry {
 }
 
 pub fn try_index_repository(repository: &Path, output_directory: &Path) -> Result<(), IndexError> {
-    if !(output_directory.join("git_log.parquet").exists() && output_directory.join("git_file_entries.parquet").exists()) {
+    if !(output_directory.join(GIT_LOG_PATH).exists() && output_directory.join(GIT_FILE_ENTRIES_PATH).exists()) {
         index_repository(repository, output_directory)
     } else {
         Ok(())
@@ -62,13 +66,13 @@ pub fn index_repository(repository: &Path, output_directory: &Path) -> Result<()
     let repository = Repository::open(repository)?;
 
     let mut git_log_writer = SerializedFileWriter::new(
-        File::create(output_directory.join("git_log.parquet"))?,
+        File::create(output_directory.join(GIT_LOG_PATH))?,
         vec![GitLogEntry::default()].as_slice().schema()?,
         WriterPropertiesPtr::new(WriterProperties::default())
     )?;
 
     let mut git_entries_writer = SerializedFileWriter::new(
-        File::create(output_directory.join("git_file_entries.parquet"))?,
+        File::create(output_directory.join(GIT_FILE_ENTRIES_PATH))?,
         vec![GitFileEntry::default()].as_slice().schema()?,
         WriterPropertiesPtr::new(WriterProperties::default())
     )?;

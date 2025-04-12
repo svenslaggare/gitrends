@@ -6,7 +6,7 @@ pub mod model;
 pub mod extras;
 pub mod printing;
 pub mod custom_functions;
-mod helpers;
+pub mod helpers;
 
 use crate::querying::extras::ModuleDefinitionError;
 

@@ -4,11 +4,11 @@ Web-based behavior code analysis tool based on the work by Adam Tornhill in "You
 
 The following behavior code analysis are implemented:
 
-* Module decomposition
-* Hotspot
-* Change coupling
-* Main developer
-* Commit spread
+* Module decomposition - breakdown of amount of code by module.
+* Hotspots - which file/module is changed most often.
+* Change coupling - which file/module are changed together.
+* Main developer - who has added most lines for file/module.
+* Commit spread - spread of commit authors per module.
 * Ability to write custom analysis in SQL.
 
 ![Gitrends](Screenshot.png)
@@ -29,7 +29,7 @@ The following behavior code analysis are implemented:
 * Run as `./gitnotes <config>`.
 
 ## How to use
-The configuration is defined in a YAML file:
+The application is configured through a YAML file:
 ```yaml
 source_dir: /home/antjans/Code/sqlgrep
 data_dir: data/sqlgrep
@@ -87,7 +87,7 @@ Run `./build_deb.sh` to build the Debian package.
 
 ## Implementation details
 The data from the git log and source code analysis is extracted as Parquet files which then is used by Apache DataFusion to provide a querying engine on top of the data. 
-Most of the analysis is then implemented as SQL queries. In addition, this allows an user of the tool to write custom SQL queries of the underlying data as well.
+Most of the analysis is then implemented as SQL queries. In addition, this allows a user of the tool to write custom SQL queries of the underlying data as well.
 
 ## Logo
 Logo inspired by the Git logo - see https://git-scm.com/downloads/logos.

@@ -143,7 +143,7 @@ impl RepositoryQuerying {
                 SUM(num_blank_lines) AS num_blank_lines,
 
                 SUM(total_indent_levels) AS total_indent_levels,
-                SUM(total_indent_levels) / SUM(num_code_lines) AS avg_indent_levels
+                SUM(total_indent_levels)::double / SUM(num_code_lines)::double AS avg_indent_levels
             FROM latest_revision_file_entries
             GROUP BY extract_module_name(file_name)
         "#

@@ -60,7 +60,7 @@ export interface Module {
     files: FileEntry[];
 }
 
-export interface Hotspot {
+export interface HotspotEntry {
     name: string;
     num_revisions: number;
     num_authors: number;
@@ -68,7 +68,7 @@ export interface Hotspot {
     total_indent_levels: number;
 }
 
-export interface ChangeCoupling {
+export interface ChangeCouplingEntry {
     left_name: string;
     right_name: string;
     coupled_revisions: number;
@@ -76,7 +76,7 @@ export interface ChangeCoupling {
     num_right_revisions: number;
 }
 
-export function changeCouplingTableRow(changeCoupling: ChangeCoupling, name: string) {
+export function changeCouplingTableRow(changeCoupling: ChangeCouplingEntry, name: string) {
     let averageRevisions = Math.ceil((changeCoupling.num_left_revisions + changeCoupling.num_right_revisions) / 2.0);
     switch (name) {
         case "average_revisions":
@@ -86,6 +86,11 @@ export function changeCouplingTableRow(changeCoupling: ChangeCoupling, name: str
         default:
             return changeCoupling[name];
     }
+}
+
+export interface SumOfCouplingEntry {
+    name: string;
+    sum_of_couplings: number;
 }
 
 export interface FileHistory {

@@ -20,6 +20,7 @@ import {CustomAnalysisView} from "./views/customAnalysis";
 import {CommitSpreadView} from "./views/commitSpread";
 import {AppConfig, loadPersistedConfig} from "./config";
 import {ConfigurationView} from "./views/configuration";
+import {SumOfCouplingView} from "./views/sumOfCouplings";
 
 interface ApplicationMainProps {
 
@@ -160,6 +161,13 @@ class ApplicationMain extends React.Component<ApplicationMainProps, ApplicationM
                             </li>
 
                             <li className="nav-item">
+                                <RenderLink to="/sum-of-couplings">
+                                    <i className="fa-solid fa-table-list"/>
+                                    Sum of couplings
+                                </RenderLink>
+                            </li>
+
+                            <li className="nav-item">
                                 <RenderDualLink
                                     to1={"/main-developer"}
                                     to2={"/main-developer-structure"}
@@ -227,6 +235,9 @@ class ApplicationMain extends React.Component<ApplicationMainProps, ApplicationM
                     </Route>
                     <Route path="/change-coupling-structure">
                         <RenderChangeCouplingStructureView self={this} />
+                    </Route>
+                    <Route path="/sum-of-couplings">
+                        <RenderSumOfCouplingsView self={this} />
                     </Route>
                     <Route path="/main-developer">
                         <RenderMainDeveloperView self={this} />
@@ -334,6 +345,16 @@ function RenderChangeCouplingView({ self }: { self: ApplicationMain }) {
 function RenderChangeCouplingStructureView({ self }: { self: ApplicationMain }) {
     return (
         <ChangeCouplingStructureView
+            config={self.state.config}
+            initialEntryType={getEntryType(useLocation().hash)}
+            onError={error => { self.setError(error); }}
+        />
+    );
+}
+
+function RenderSumOfCouplingsView({ self }: { self: ApplicationMain }) {
+    return (
+        <SumOfCouplingView
             config={self.state.config}
             initialEntryType={getEntryType(useLocation().hash)}
             onError={error => { self.setError(error); }}

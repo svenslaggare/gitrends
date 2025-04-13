@@ -1,26 +1,28 @@
 import React from "react";
-
 import axios from "axios";
 
-import {HotspotEntry} from "../model";
 import {EntryType, EntryTypeSwitcher, Table} from "../helpers/view";
 import {capitalize, OnError} from "../helpers/misc";
 import {ShowSelectedFileModal} from "../helpers/selectedFileModal";
 import {AppConfig} from "../config";
+import {SumOfCouplingEntry} from "../model";
 
-interface HotspotsViewProps {
+interface SumOfCouplingViewProps {
     config: AppConfig;
 
-    initialEntryType: EntryType;
+    initialEntryType: EntryType
     onError: OnError;
 }
 
-interface HotspotsViewState {
+interface SumOfCouplingViewState {
     entryType: EntryType;
-    hotspots: HotspotEntry[];
+
+    sumOfCouplings: SumOfCouplingEntry[];
+
+    selectedName: string;
 }
 
-export class HotspotsView extends React.Component<HotspotsViewProps, HotspotsViewState> {
+export class SumOfCouplingView extends React.Component<SumOfCouplingViewProps, SumOfCouplingViewState> {
     showSelectedFileModal = React.createRef<ShowSelectedFileModal>();
 
     constructor(props) {
@@ -28,25 +30,30 @@ export class HotspotsView extends React.Component<HotspotsViewProps, HotspotsVie
 
         this.state = {
             entryType: this.props.initialEntryType ?? EntryType.File,
-            hotspots: []
+            sumOfCouplings: [],
+            selectedName: null
         };
 
         this.fetchAll();
     }
 
     render() {
+        let entryType = this.entryTypeName();
+
         return (
             <div>
-                <ShowSelectedFileModal ref={this.showSelectedFileModal} onError={this.props.onError} />
+                <ShowSelectedFileModal ref={this.showSelectedFileModal} onError={this.props.onError}/>
 
                 <div className="pt-3 pb-2 mb-3 border-bottom">
                     <EntryTypeSwitcher
                         current={this.state.entryType}
                         onChange={entryType => {
+                            this.showSelectedFileModal.current.clear();
+
                             this.setState(
                                 {
                                     entryType: entryType,
-                                    hotspots: []
+                                    sumOfCouplings: []
                                 },
                                 () => {
                                     this.fetchAll();
@@ -55,22 +62,19 @@ export class HotspotsView extends React.Component<HotspotsViewProps, HotspotsVie
                         }}
                     />
 
-                    <h1 className="h2">Hotspots</h1>
+                    <h1 className="h2">Sum of couplings</h1>
                 </div>
 
                 <Table
                     columns={[
                         {
                             name: "name",
-                            display: `${capitalize(this.entryTypeName())} name`,
+                            display: capitalize(`${entryType} name`),
                             clickable: this.state.entryType == EntryType.File
                         },
-                        { name: "num_revisions", display: "Number of revisions", clickable: false },
-                        { name: "num_authors", display: "Number of authors", clickable: false },
-                        { name: "num_code_lines", display: "Number of code lines", clickable: false },
-                        { name: "total_indent_levels", display: "Complexity", clickable: false }
+                        {name: "sum_of_couplings", display: "Sum of couplings", clickable: false},
                     ]}
-                    rows={this.state.hotspots}
+                    rows={this.state.sumOfCouplings}
                     extractColumn={(row, name) => row[name]}
                     onValueClick={(row, column) => {
                         if (column == "name") {
@@ -86,11 +90,12 @@ export class HotspotsView extends React.Component<HotspotsViewProps, HotspotsVie
         );
     }
 
+
     fetchAll() {
-        axios.get(`/api/${this.entryTypeName()}/hotspots?count=${this.props.config.hotspotsMaxEntries}`)
+        axios.get(`/api/${this.entryTypeName()}/sum-of-couplings?count=${this.props.config.changeCouplingMaxEntries}`)
             .then(response => {
                 this.setState({
-                    hotspots: response.data
+                    sumOfCouplings: response.data
                 });
             })
             .catch(error => {

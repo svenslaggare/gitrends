@@ -1,7 +1,7 @@
 import React from "react";
 import axios from "axios";
 
-import {ChangeCoupling, changeCouplingTableRow} from "../model";
+import {ChangeCouplingEntry, changeCouplingTableRow} from "../model";
 import {EntryType, EntryTypeSwitcher, Table} from "../helpers/view";
 import {OnError} from "../helpers/misc";
 import {ShowSelectedFileModal} from "../helpers/selectedFileModal";
@@ -21,8 +21,8 @@ interface ChangeCouplingViewProps {
 interface ChangeCouplingViewState {
     entryType: EntryType;
 
-    allChangeCoupling: ChangeCoupling[];
-    specificChangeCoupling: ChangeCoupling[];
+    allChangeCoupling: ChangeCouplingEntry[];
+    specificChangeCoupling: ChangeCouplingEntry[];
 
     selectedName: string;
 }
@@ -111,7 +111,7 @@ export class ChangeCouplingView extends React.Component<ChangeCouplingViewProps,
                         {name: "coupling_ratio", display: "Amount of coupling (%)", clickable: false}
                     ]}
                     rows={changeCoupling}
-                    extractColumn={(row: ChangeCoupling, name: string) => changeCouplingTableRow(row, name)}
+                    extractColumn={(row: ChangeCouplingEntry, name: string) => changeCouplingTableRow(row, name)}
                     onValueClick={(row, column) => {
                         switch (column) {
                             case "left_name":

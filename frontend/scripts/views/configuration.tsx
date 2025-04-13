@@ -43,6 +43,14 @@ export class ConfigurationView extends React.Component<ConfigurationViewProps, C
                     />
                 </ConfigSection>
 
+                <ConfigSection label="Sum of couplings">
+                    <RangeSlider
+                        id="sumOfCouplingsMaxEntries" label="Max entries"
+                        value={this.props.config.sumOfCouplingsMaxEntries} min={1} max={1000}
+                        onChange={value => { this.changeConfig({ sumOfCouplingsMaxEntries: value }); }}
+                    />
+                </ConfigSection>
+
                 <ConfigSection label="Main developer">
                     <RangeSlider
                         id="mainDeveloperMaxEntries" label="Max entries"

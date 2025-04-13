@@ -1,7 +1,7 @@
 import React from "react";
 import axios from "axios";
 
-import {ChangeCoupling, changeCouplingTableRow, FileHistory} from "../model";
+import {ChangeCouplingEntry, changeCouplingTableRow, FileHistory} from "../model";
 import {CodeComplexityTimeChart} from "./charts";
 import {OnError} from "./misc";
 import {Table} from "./view";
@@ -12,7 +12,7 @@ interface ShowSelectedFileModalProps {
 
 interface ShowSelectedFileModalState {
     fileHistory: FileHistory;
-    changeCoupling: ChangeCoupling[];
+    changeCoupling: ChangeCouplingEntry[];
 }
 
 export class ShowSelectedFileModal extends React.Component<ShowSelectedFileModalProps, ShowSelectedFileModalState> {
@@ -98,7 +98,7 @@ export class ShowSelectedFileModal extends React.Component<ShowSelectedFileModal
 export interface SelectedFileModalProps {
     name: string;
     selectedFile: FileHistory;
-    changeCoupling: ChangeCoupling[];
+    changeCoupling: ChangeCouplingEntry[];
     onClose: () => void;
 }
 
@@ -129,7 +129,7 @@ export function SelectedFileModal({ name, selectedFile, changeCoupling, onClose 
                                 {name: "coupling_ratio", display: "Amount of coupling (%)", clickable: false}
                             ]}
                             rows={changeCoupling}
-                            extractColumn={(row: ChangeCoupling, name) => changeCouplingTableRow(row, name)}
+                            extractColumn={(row: ChangeCouplingEntry, name) => changeCouplingTableRow(row, name)}
                             initialSortOrder={{
                                 columnIndex: 1,
                                 order: -1

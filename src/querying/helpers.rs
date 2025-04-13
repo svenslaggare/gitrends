@@ -4,7 +4,7 @@ use datafusion::common::DataFusionError;
 use datafusion::dataframe::DataFrame;
 
 use crate::indexing::indexer::GitLogEntry;
-use crate::querying::model::{Author, CommitSpreadEntry, FileEntry, FileHistoryEntry, Hotspot, MainDeveloperEntry};
+use crate::querying::model::{Author, CommitSpreadEntry, FileEntry, FileHistoryEntry, HotspotEntry, MainDeveloperEntry, SumOfCouplingEntry};
 use crate::querying::QueryingResult;
 
 pub fn yield_rows<F: FnMut(&[&ArrayRef], usize)>(results: Vec<RecordBatch>, num_columns: usize, mut callback: F) {
@@ -114,11 +114,11 @@ impl FromRow for FileHistoryEntry {
     }
 }
 
-impl FromRow for Hotspot {
+impl FromRow for HotspotEntry {
     const NUM_COLUMNS: usize = 8;
 
-    fn from_row(columns: &[&ArrayRef], row_index: usize, base_column_index: usize) -> Hotspot {
-        Hotspot {
+    fn from_row(columns: &[&ArrayRef], row_index: usize, base_column_index: usize) -> HotspotEntry {
+        HotspotEntry {
             name: columns[base_column_index].as_string_view().value(row_index).to_owned(),
             num_revisions: columns[base_column_index + 1].as_primitive::<Int64Type>().value(row_index) as u64,
             num_authors: columns[base_column_index + 2].as_primitive::<Int64Type>().value(row_index) as u64,
@@ -129,6 +129,17 @@ impl FromRow for Hotspot {
 
             total_indent_levels: columns[base_column_index + 6].as_primitive::<UInt64Type>().value(row_index),
             avg_indent_levels: columns[base_column_index + 7].as_primitive::<Float64Type>().value(row_index)
+        }
+    }
+}
+
+impl FromRow for SumOfCouplingEntry {
+    const NUM_COLUMNS: usize = 2;
+
+    fn from_row(columns: &[&ArrayRef], row_index: usize, base_column_index: usize) -> SumOfCouplingEntry {
+        SumOfCouplingEntry {
+            name: columns[base_column_index].as_string_view().value(row_index).to_owned(),
+            sum_of_couplings: columns[base_column_index + 1].as_primitive::<Int64Type>().value(row_index) as u64
         }
     }
 }

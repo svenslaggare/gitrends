@@ -7,6 +7,7 @@ The following behavior code analysis are implemented:
 * Module decomposition - breakdown of amount of code by module.
 * Hotspots - which file/module is changed most often.
 * Change coupling - which file/module are changed together.
+* Sum of couplings - total change coupling per file/module.
 * Main developer - who has added most lines for file/module.
 * Commit spread - spread of commit authors per module.
 * Ability to write custom analysis in SQL.

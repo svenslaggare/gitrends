@@ -14,7 +14,7 @@ use crate::indexing::{GIT_FILE_ENTRIES_PATH, GIT_LOG_PATH};
 use crate::indexing::indexer::GitLogEntry;
 use crate::querying::{custom_functions, QueryingResult};
 use crate::querying::helpers::{add_optional_limit, collect_rows, collect_rows_into, yield_rows, FromRow};
-use crate::querying::model::{ChangeCoupling, CommitSpreadEntry, CustomAnalysis, CustomValue, FileEntry, FileHistoryEntry, Hotspot, MainDeveloperEntry, Module, RepositorySummary};
+use crate::querying::model::{ChangeCouplingEntry, CommitSpreadEntry, CustomAnalysis, CustomValue, FileEntry, FileHistoryEntry, HotspotEntry, MainDeveloperEntry, Module, RepositorySummary, SumOfCouplingEntry};
 
 #[derive(Clone, Deserialize, Serialize)]
 pub struct RepositoryQueryingConfig {
@@ -217,6 +217,28 @@ impl RepositoryQuerying {
             WHERE
                 left_entries.revision = right_entries.revision
                 AND left_entries.module_name != right_entries.module_name
+            "#
+        ).await?;
+
+        ctx.sql(
+            r#"
+            CREATE VIEW file_sum_of_couplings AS
+            SELECT
+                left_file_name AS file_name,
+                COUNT(revision, right_file_name) AS sum_of_couplings
+            FROM file_coupled_revisions
+            GROUP BY left_file_name
+            "#
+        ).await?;
+
+        ctx.sql(
+            r#"
+            CREATE VIEW module_sum_of_couplings AS
+            SELECT
+                left_module_name AS file_name,
+                COUNT(revision, right_module_name) AS sum_of_couplings
+            FROM module_coupled_revisions
+            GROUP BY left_module_name
             "#
         ).await?;
 
@@ -450,7 +472,7 @@ impl RepositoryQuerying {
         Ok(modules.into_values().collect())
     }
 
-    pub async fn file_hotspots(&self, count: Option<usize>) -> QueryingResult<Vec<Hotspot>> {
+    pub async fn file_hotspots(&self, count: Option<usize>) -> QueryingResult<Vec<HotspotEntry>> {
         let result_df = self.ctx.sql(
             r#"
             SELECT
@@ -462,10 +484,10 @@ impl RepositoryQuerying {
 
         let result_df = add_optional_limit(result_df, count)?;
 
-        collect_rows::<Hotspot>(result_df).await
+        collect_rows::<HotspotEntry>(result_df).await
     }
 
-    pub async fn module_hotspots(&self, count: Option<usize>) -> QueryingResult<Vec<Hotspot>> {
+    pub async fn module_hotspots(&self, count: Option<usize>) -> QueryingResult<Vec<HotspotEntry>> {
         let result_df = self.ctx.sql(
             r#"
             SELECT
@@ -477,10 +499,10 @@ impl RepositoryQuerying {
 
         let result_df = add_optional_limit(result_df, count)?;
 
-        collect_rows::<Hotspot>(result_df).await
+        collect_rows::<HotspotEntry>(result_df).await
     }
 
-    pub async fn file_change_couplings(&self, count: Option<usize>) -> QueryingResult<Vec<ChangeCoupling>> {
+    pub async fn file_change_couplings(&self, count: Option<usize>) -> QueryingResult<Vec<ChangeCouplingEntry>> {
         let result_df = self.ctx.sql(
             r#"
             SELECT
@@ -506,7 +528,7 @@ impl RepositoryQuerying {
         ).await
     }
 
-    pub async fn change_couplings_for_file(&self, file_name: &str, count: Option<usize>) -> QueryingResult<Vec<ChangeCoupling>> {
+    pub async fn change_couplings_for_file(&self, file_name: &str, count: Option<usize>) -> QueryingResult<Vec<ChangeCouplingEntry>> {
         let result_df = self.ctx
             .sql(
                 r#"
@@ -535,7 +557,7 @@ impl RepositoryQuerying {
         ).await
     }
 
-    pub async fn module_change_couplings(&self, count: Option<usize>) -> QueryingResult<Vec<ChangeCoupling>> {
+    pub async fn module_change_couplings(&self, count: Option<usize>) -> QueryingResult<Vec<ChangeCouplingEntry>> {
         let result_df = self.ctx.sql(
             r#"
             SELECT
@@ -561,7 +583,7 @@ impl RepositoryQuerying {
         ).await
     }
 
-    pub async fn change_couplings_for_module(&self, module_name: &str, count: Option<usize>) -> QueryingResult<Vec<ChangeCoupling>> {
+    pub async fn change_couplings_for_module(&self, module_name: &str, count: Option<usize>) -> QueryingResult<Vec<ChangeCouplingEntry>> {
         let result_df = self.ctx
             .sql(
                 r#"
@@ -594,7 +616,7 @@ impl RepositoryQuerying {
         &self,
         result_df: DataFrame,
         num_revisions: &HashMap<String, u64>
-    ) -> QueryingResult<Vec<ChangeCoupling>> {
+    ) -> QueryingResult<Vec<ChangeCouplingEntry>> {
         let mut change_couplings = Vec::new();
         yield_rows(
             result_df.collect().await?,
@@ -604,7 +626,7 @@ impl RepositoryQuerying {
                 let right_name = columns[1].as_string_view().value(row_index).to_owned();
 
                 change_couplings.push(
-                    ChangeCoupling {
+                    ChangeCouplingEntry {
                         left_name: left_name.clone(),
                         right_name: right_name.clone(),
                         coupled_revisions: columns[2].as_primitive::<Int64Type>().value(row_index) as u64,
@@ -616,6 +638,36 @@ impl RepositoryQuerying {
         );
 
         Ok(change_couplings)
+    }
+
+    pub async fn file_sum_of_couplings(&self, count: Option<usize>) -> QueryingResult<Vec<SumOfCouplingEntry>> {
+        let result_df = self.ctx.sql(
+            r#"
+            SELECT
+                *
+            FROM file_sum_of_couplings
+            ORDER BY sum_of_couplings DESC
+            "#
+        ).await?;
+
+        let result_df = add_optional_limit(result_df, count)?;
+
+        collect_rows::<SumOfCouplingEntry>(result_df).await
+    }
+
+    pub async fn module_sum_of_couplings(&self, count: Option<usize>) -> QueryingResult<Vec<SumOfCouplingEntry>> {
+        let result_df = self.ctx.sql(
+            r#"
+            SELECT
+                *
+            FROM module_sum_of_couplings
+            ORDER BY sum_of_couplings DESC
+            "#
+        ).await?;
+
+        let result_df = add_optional_limit(result_df, count)?;
+
+        collect_rows::<SumOfCouplingEntry>(result_df).await
     }
 
     pub async fn file_history(&self, file_name: &str) -> QueryingResult<Vec<FileHistoryEntry>> {

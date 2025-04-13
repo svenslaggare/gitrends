@@ -3,6 +3,8 @@ export interface AppConfig {
 
     changeCouplingMaxEntries: number;
 
+    sumOfCouplingsMaxEntries: number;
+
     mainDeveloperMaxEntries: number;
     mainDeveloperHistogramMaxDevelopers: number;
     mainDeveloperHistogramNormalized: boolean;
@@ -17,6 +19,8 @@ export const DEFAULT_CONFIG: AppConfig = {
     hotspotsMaxEntries: 100,
 
     changeCouplingMaxEntries: 100,
+
+    sumOfCouplingsMaxEntries: 100,
 
     mainDeveloperMaxEntries: 100,
     mainDeveloperHistogramMaxDevelopers: 9,

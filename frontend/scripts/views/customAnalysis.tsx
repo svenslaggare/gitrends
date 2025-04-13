@@ -219,6 +219,8 @@ export class CustomAnalysisView extends React.Component<CustomAnalysisViewProps,
                     <li><code>module_coupled_revisions</code>: The coupled module revisions.</li>
                     <li><code>file_developers</code>: The developer statistics of a specific file.</li>
                     <li><code>module_developers</code>: The developer statistics of a specific module.</li>
+                    <li><code>file_sum_of_couplings</code>: The sum of couplings per file.</li>
+                    <li><code>module_sum_of_couplings</code>: The sum of couplings per module.</li>
                 </ul>
             </div>
         );

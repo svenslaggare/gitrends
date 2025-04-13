@@ -94,6 +94,7 @@ pub async fn main(config: WebAppConfig) {
         .route("/api/file/hotspots-structure", get(get_file_hotspots_structure))
         .route("/api/file/change-coupling", get(get_file_change_coupling))
         .route("/api/file/change-coupling-structure", get(get_file_change_coupling_structure))
+        .route("/api/file/sum-of-couplings", get(get_file_sum_of_couplings))
         .route("/api/file/history/{*file_name}", get(get_file_history))
         .route("/api/file/main-developer", get(get_files_main_developer))
         .route("/api/file/main-developer-structure", get(get_files_main_developer_structure))
@@ -102,6 +103,7 @@ pub async fn main(config: WebAppConfig) {
         .route("/api/module/hotspots", get(get_module_hotspots))
         .route("/api/module/change-coupling", get(get_module_change_coupling))
         .route("/api/module/change-coupling-structure", get(get_module_change_coupling_structure))
+        .route("/api/module/sum-of-couplings", get(get_module_sum_of_couplings))
         .route("/api/module/main-developer", get(get_modules_main_developer))
         .route("/api/module/commit-spread", get(get_modules_commit_spread))
 
@@ -353,6 +355,17 @@ async fn get_file_change_coupling_structure(
     Ok(Json(change_coupling_tree))
 }
 
+async fn get_file_sum_of_couplings(
+    State(state): State<Arc<WebAppState>>,
+    Query(query): Query<HashMap<String, String>>
+) -> WebAppResult<impl IntoResponse> {
+    let repository_querying = state.repository_querying.load();
+
+    let count = query.get("count").map(|x| usize::from_str(x).ok()).flatten();
+
+    Ok(Json(repository_querying.file_sum_of_couplings(count.or(Some(100))).await?))
+}
+
 async fn get_file_history(
     State(state): State<Arc<WebAppState>>,
     Path(file_name): Path<String>
@@ -432,6 +445,17 @@ async fn get_module_change_coupling_structure(
     );
 
     Ok(Json(change_coupling_tree))
+}
+
+async fn get_module_sum_of_couplings(
+    State(state): State<Arc<WebAppState>>,
+    Query(query): Query<HashMap<String, String>>
+) -> WebAppResult<impl IntoResponse> {
+    let repository_querying = state.repository_querying.load();
+
+    let count = query.get("count").map(|x| usize::from_str(x).ok()).flatten();
+
+    Ok(Json(repository_querying.module_sum_of_couplings(count.or(Some(100))).await?))
 }
 
 async fn get_modules_main_developer(

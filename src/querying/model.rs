@@ -96,7 +96,7 @@ impl TablePrinting for FileHistoryEntry {
 }
 
 #[derive(Debug, Serialize)]
-pub struct Hotspot {
+pub struct HotspotEntry {
     pub name: String,
     pub num_revisions: u64,
     pub num_authors: u64,
@@ -109,7 +109,7 @@ pub struct Hotspot {
     pub avg_indent_levels: f64
 }
 
-impl Display for Hotspot {
+impl Display for HotspotEntry {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
@@ -123,7 +123,7 @@ impl Display for Hotspot {
     }
 }
 
-impl TablePrinting for Hotspot {
+impl TablePrinting for HotspotEntry {
     fn get_column_names() -> Vec<String> {
         vec![
             "name".to_string(),
@@ -146,62 +146,6 @@ impl TablePrinting for Hotspot {
 }
 
 #[derive(Debug, Serialize)]
-pub struct ChangeCoupling {
-    pub left_name: String,
-    pub right_name: String,
-    pub coupled_revisions: u64,
-    pub num_left_revisions: u64,
-    pub num_right_revisions: u64
-}
-
-impl ChangeCoupling {
-    pub fn average_revisions(&self) -> u64 {
-        (self.num_left_revisions + self.num_right_revisions) / 2
-    }
-
-    pub fn coupling_ratio(&self) -> f64 {
-        self.coupled_revisions as f64 / self.average_revisions() as f64
-    }
-}
-
-impl Display for ChangeCoupling {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "{}, {} - coupled revisions: {} ({:.1} %), revisions: {}, {}",
-            self.left_name,
-            self.right_name,
-            self.coupled_revisions,
-            self.coupling_ratio() * 100.0,
-            self.num_left_revisions,
-            self.num_right_revisions
-        )
-    }
-}
-
-impl TablePrinting for ChangeCoupling {
-    fn get_column_names() -> Vec<String> {
-        vec![
-            "left_module".to_string(),
-            "right_module".to_string(),
-            "coupled_revisions".to_string(),
-            "num_left_revisions".to_string(),
-            "num_right_revisions".to_string(),
-        ]
-    }
-
-    fn add_row(&self, table_printer: &mut TablePrinter) {
-        table_printer.add_row(vec![
-            self.left_name.clone(),
-            self.right_name.clone(),
-            self.coupled_revisions.to_string(),
-            self.num_left_revisions.to_string(),
-            self.num_right_revisions.to_string(),
-        ]);
-    }
-}
-
-#[derive(Debug, Serialize)]
 #[serde(tag="type")]
 pub enum HotspotTree {
     Tree {
@@ -217,7 +161,7 @@ pub enum HotspotTree {
 }
 
 impl HotspotTree {
-    pub fn from_vec(hotspots: &Vec<Hotspot>) -> HotspotTree {
+    pub fn from_vec(hotspots: &Vec<HotspotEntry>) -> HotspotTree {
         HotspotTree::from_raw(RawHotspotTree::from_vec(hotspots))
     }
 
@@ -266,7 +210,7 @@ enum RawHotspotTree {
 }
 
 impl RawHotspotTree {
-    pub fn from_vec(hotspots: &Vec<Hotspot>) -> RawHotspotTree {
+    pub fn from_vec(hotspots: &Vec<HotspotEntry>) -> RawHotspotTree {
         let max_num_revisions = hotspots.iter().map(|hotspot| hotspot.num_revisions).max().unwrap_or(0);
         let max_num_authors = hotspots.iter().map(|hotspot| hotspot.num_authors).max().unwrap_or(0);
 
@@ -312,6 +256,62 @@ impl RawHotspotTree {
 }
 
 #[derive(Debug, Serialize)]
+pub struct ChangeCouplingEntry {
+    pub left_name: String,
+    pub right_name: String,
+    pub coupled_revisions: u64,
+    pub num_left_revisions: u64,
+    pub num_right_revisions: u64
+}
+
+impl ChangeCouplingEntry {
+    pub fn average_revisions(&self) -> u64 {
+        (self.num_left_revisions + self.num_right_revisions) / 2
+    }
+
+    pub fn coupling_ratio(&self) -> f64 {
+        self.coupled_revisions as f64 / self.average_revisions() as f64
+    }
+}
+
+impl Display for ChangeCouplingEntry {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{}, {} - coupled revisions: {} ({:.1} %), revisions: {}, {}",
+            self.left_name,
+            self.right_name,
+            self.coupled_revisions,
+            self.coupling_ratio() * 100.0,
+            self.num_left_revisions,
+            self.num_right_revisions
+        )
+    }
+}
+
+impl TablePrinting for ChangeCouplingEntry {
+    fn get_column_names() -> Vec<String> {
+        vec![
+            "left_module".to_string(),
+            "right_module".to_string(),
+            "coupled_revisions".to_string(),
+            "num_left_revisions".to_string(),
+            "num_right_revisions".to_string(),
+        ]
+    }
+
+    fn add_row(&self, table_printer: &mut TablePrinter) {
+        table_printer.add_row(vec![
+            self.left_name.clone(),
+            self.right_name.clone(),
+            self.coupled_revisions.to_string(),
+            self.num_left_revisions.to_string(),
+            self.num_right_revisions.to_string(),
+        ]);
+    }
+}
+
+#[derive(Debug, Serialize)]
 #[serde(tag="type")]
 pub enum ChangeCouplingTree {
     Tree {
@@ -326,7 +326,7 @@ pub enum ChangeCouplingTree {
 
 impl ChangeCouplingTree {
     pub fn from_vec(
-        change_couplings: &Vec<ChangeCoupling>,
+        change_couplings: &Vec<ChangeCouplingEntry>,
         split_at_path_separator: bool,
         min_coupled_revisions: u64,
         min_coupling_ratio: f64,
@@ -406,7 +406,7 @@ enum RawChangeCouplingTree {
 }
 
 impl RawChangeCouplingTree {
-    pub fn from_vec(change_coupling: &Vec<ChangeCoupling>, split_at_path_separator: bool) -> RawChangeCouplingTree {
+    pub fn from_vec(change_coupling: &Vec<ChangeCouplingEntry>, split_at_path_separator: bool) -> RawChangeCouplingTree {
         let mut root = RawChangeCouplingTree::Tree {
             name: String::new(),
             children: HashMap::new()
@@ -416,7 +416,7 @@ impl RawChangeCouplingTree {
             root: &mut RawChangeCouplingTree,
             name1: &str,
             name2: &str,
-            change_coupling: &ChangeCoupling
+            change_coupling: &ChangeCouplingEntry
         ) {
             let mut current = root;
 
@@ -461,7 +461,7 @@ impl RawChangeCouplingTree {
             root: &mut RawChangeCouplingTree,
             name1: &str,
             name2: &str,
-            change_coupling: &ChangeCoupling
+            change_coupling: &ChangeCouplingEntry
         ) {
             match root {
                 RawChangeCouplingTree::Tree { children, .. } => {
@@ -498,6 +498,12 @@ impl RawChangeCouplingTree {
 
         root
     }
+}
+
+#[derive(Debug, Serialize)]
+pub struct SumOfCouplingEntry {
+    pub name: String,
+    pub sum_of_couplings: u64,
 }
 
 #[derive(Debug, Serialize)]

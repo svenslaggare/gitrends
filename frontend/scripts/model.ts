@@ -8,6 +8,7 @@ export interface Summary {
     last_commit: Commit;
 
     num_code_lines: number;
+    num_comment_lines: number;
     num_files: number;
     num_modules: number;
 

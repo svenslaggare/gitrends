@@ -16,6 +16,7 @@ pub struct RepositorySummary {
     pub last_commit: Option<GitLogEntry>,
 
     pub num_code_lines: u64,
+    pub num_comment_lines: u64,
     pub num_files: u64,
     pub num_modules: u64,
 

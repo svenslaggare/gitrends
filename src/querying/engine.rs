@@ -120,13 +120,13 @@ impl RepositoryQuerying {
             SELECT
                 file_name,
 
-                last_value(num_code_lines ORDER BY date) AS num_code_lines,
-                last_value(num_comment_lines ORDER BY date) AS num_comment_lines,
-                last_value(num_blank_lines ORDER BY date) AS num_blank_lines,
+                LAST_VALUE(num_code_lines ORDER BY date) AS num_code_lines,
+                LAST_VALUE(num_comment_lines ORDER BY date) AS num_comment_lines,
+                LAST_VALUE(num_blank_lines ORDER BY date) AS num_blank_lines,
 
-                last_value(total_indent_levels ORDER BY date) AS total_indent_levels,
-                last_value(avg_indent_levels ORDER BY date) AS avg_indent_levels,
-                last_value(std_indent_levels ORDER BY date) AS std_indent_levels
+                LAST_VALUE(total_indent_levels ORDER BY date) AS total_indent_levels,
+                LAST_VALUE(avg_indent_levels ORDER BY date) AS avg_indent_levels,
+                LAST_VALUE(std_indent_levels ORDER BY date) AS std_indent_levels
             FROM git_file_entries
             GROUP BY file_name
             "#
@@ -284,6 +284,7 @@ impl RepositoryQuerying {
             last_commit: None,
 
             num_code_lines: 0,
+            num_comment_lines: 0,
             num_files: 0,
             num_modules: 0,
 
@@ -332,18 +333,20 @@ impl RepositoryQuerying {
             SELECT
                 COUNT(file_name) AS num_files,
                 COUNT(DISTINCT extract_module_name(file_name)) AS num_modules,
-                SUM(num_code_lines) AS num_code_lines
+                SUM(num_code_lines) AS num_code_lines,
+                SUM(num_comment_lines) AS num_comment_lines
             FROM latest_revision_file_entries
             "#
         ).await?;
 
         yield_rows(
             result_df.collect().await?,
-            3,
+            4,
             |columns, row_index| {
                 result.num_files = columns[0].as_primitive::<Int64Type>().value(row_index) as u64;
                 result.num_modules = columns[1].as_primitive::<Int64Type>().value(row_index) as u64;
                 result.num_code_lines = columns[2].as_primitive::<UInt64Type>().value(row_index);
+                result.num_comment_lines = columns[3].as_primitive::<UInt64Type>().value(row_index);
             }
         );
 

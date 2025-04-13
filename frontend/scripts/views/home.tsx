@@ -61,6 +61,7 @@ export class HomeView extends React.Component<HomeViewProps, HomeViewState> {
                             <li>Number of revisions: {summary.num_revisions}</li>
                             <li>Age: {humanizeDuration((summary.last_commit?.date - summary.first_commit?.date) * 1000)}</li>
                             <li>Total number of code lines: {summary.num_code_lines}</li>
+                            <li>Total number of comment lines: {summary.num_comment_lines}</li>
                             <li>Total number of files: {summary.num_files}</li>
                             <li>Total number of modules: {summary.num_modules}</li>
                         </ul>

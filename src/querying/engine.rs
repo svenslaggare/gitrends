@@ -434,6 +434,7 @@ impl RepositoryQuerying {
                 avg_indent_levels,
                 std_indent_levels
             FROM latest_revision_file_entries
+            ORDER BY num_code_lines DESC
             "#
         ).await?;
 
@@ -456,6 +457,7 @@ impl RepositoryQuerying {
                 avg_indent_levels,
                 std_indent_levels
             FROM latest_revision_file_entries
+            ORDER BY num_code_lines DESC
             "#
         ).await?;
 
@@ -728,7 +730,7 @@ impl RepositoryQuerying {
                     LAST_VALUE(net_added_lines ORDER BY net_added_lines, author) AS main_developer_net_added_lines
                 FROM file_developers
                 GROUP BY file_name
-                ORDER BY ratio(main_developer_net_added_lines, total_net_added_lines) DESC
+                ORDER BY ratio(main_developer_net_added_lines, total_net_added_lines), total_net_added_lines DESC
                 "#
             )
             .await?;
@@ -747,7 +749,7 @@ impl RepositoryQuerying {
                     LAST_VALUE(net_added_lines ORDER BY net_added_lines, author) AS main_developer_net_added_lines
                 FROM module_developers
                 GROUP BY module_name
-                ORDER BY ratio(main_developer_net_added_lines, total_net_added_lines) DESC
+                ORDER BY ratio(main_developer_net_added_lines, total_net_added_lines), total_net_added_lines DESC
                 "#
             )
             .await?;

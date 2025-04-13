@@ -7,6 +7,9 @@ pub mod extras;
 pub mod custom_functions;
 pub mod helpers;
 
+#[cfg(test)]
+pub mod querying_tests;
+
 use crate::querying::extras::ModuleDefinitionError;
 
 type QueryingResult<T> = Result<T, QueryingError>;

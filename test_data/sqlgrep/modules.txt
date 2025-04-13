@@ -1,0 +1,18 @@
+src/model.rs => model
+src/data_model.rs => model
+
+src/parsing/**/* => parsing
+
+src/execution/**/* => execution
+src/executor.rs => execution
+
+src/integration_tests.rs => tests
+testdata => tests
+
+src/main.rs => cli
+src/table_editor.rs => cli
+
+src/python_wrapper => lib
+
+Cargo* => build
+.github/workflows/**/* => ci

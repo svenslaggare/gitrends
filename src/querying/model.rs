@@ -1,5 +1,4 @@
 use std::collections::HashMap;
-use std::fmt::{Display, Formatter};
 
 use serde::{Serialize, Serializer};
 
@@ -7,7 +6,6 @@ use datafusion::arrow::array::{ArrayRef, ArrowPrimitiveType, AsArray};
 use datafusion::arrow::datatypes::{DataType, FieldRef, Float32Type, Float64Type, Int32Type, Int64Type, Int8Type, UInt32Type, UInt64Type, UInt8Type};
 
 use crate::indexing::indexer::GitLogEntry;
-use crate::querying::printing::{TablePrinter, TablePrinting};
 
 #[derive(Debug, Serialize)]
 pub struct RepositorySummary {
@@ -67,34 +65,6 @@ pub struct FileHistoryEntry {
     pub std_indent_level: f64
 }
 
-impl TablePrinting for FileHistoryEntry {
-    fn get_column_names() -> Vec<String> {
-        vec![
-            "revision".to_string(),
-            "date".to_string(),
-            "num_code_lines".to_string(),
-            "num_comment_lines".to_string(),
-            "num_blank_lines".to_string(),
-            "total_indent_levels".to_string(),
-            "avg_indent_levels".to_string(),
-            "std_indent_level".to_string(),
-        ]
-    }
-
-    fn add_row(&self, table_printer: &mut TablePrinter) {
-        table_printer.add_row(vec![
-            self.revision.clone(),
-            self.date.to_string(),
-            self.num_code_lines.to_string(),
-            self.num_comment_lines.to_string(),
-            self.num_blank_lines.to_string(),
-            self.total_indent_levels.to_string(),
-            self.avg_indent_levels.to_string(),
-            self.std_indent_level.to_string()
-        ]);
-    }
-}
-
 #[derive(Debug, Serialize)]
 pub struct HotspotEntry {
     pub name: String,
@@ -107,42 +77,6 @@ pub struct HotspotEntry {
 
     pub total_indent_levels: u64,
     pub avg_indent_levels: f64
-}
-
-impl Display for HotspotEntry {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "{} - revisions: {}, authors: {}, code lines: {}, total indent level: {}",
-            self.name,
-            self.num_revisions,
-            self.num_authors,
-            self.num_code_lines,
-            self.total_indent_levels
-        )
-    }
-}
-
-impl TablePrinting for HotspotEntry {
-    fn get_column_names() -> Vec<String> {
-        vec![
-            "name".to_string(),
-            "num_revisions".to_string(),
-            "num_authors".to_string(),
-            "num_code_lines".to_string(),
-            "total_indent_levels".to_string()
-        ]
-    }
-
-    fn add_row(&self, table_printer: &mut TablePrinter) {
-        table_printer.add_row(vec![
-            self.name.clone(),
-            self.num_revisions.to_string(),
-            self.num_authors.to_string(),
-            self.num_code_lines.to_string(),
-            self.total_indent_levels.to_string()
-        ]);
-    }
 }
 
 #[derive(Debug, Serialize)]
@@ -271,43 +205,6 @@ impl ChangeCouplingEntry {
 
     pub fn coupling_ratio(&self) -> f64 {
         self.coupled_revisions as f64 / self.average_revisions() as f64
-    }
-}
-
-impl Display for ChangeCouplingEntry {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "{}, {} - coupled revisions: {} ({:.1} %), revisions: {}, {}",
-            self.left_name,
-            self.right_name,
-            self.coupled_revisions,
-            self.coupling_ratio() * 100.0,
-            self.num_left_revisions,
-            self.num_right_revisions
-        )
-    }
-}
-
-impl TablePrinting for ChangeCouplingEntry {
-    fn get_column_names() -> Vec<String> {
-        vec![
-            "left_module".to_string(),
-            "right_module".to_string(),
-            "coupled_revisions".to_string(),
-            "num_left_revisions".to_string(),
-            "num_right_revisions".to_string(),
-        ]
-    }
-
-    fn add_row(&self, table_printer: &mut TablePrinter) {
-        table_printer.add_row(vec![
-            self.left_name.clone(),
-            self.right_name.clone(),
-            self.coupled_revisions.to_string(),
-            self.num_left_revisions.to_string(),
-            self.num_right_revisions.to_string(),
-        ]);
     }
 }
 

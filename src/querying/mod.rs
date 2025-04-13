@@ -4,7 +4,6 @@ use thiserror::Error;
 pub mod engine;
 pub mod model;
 pub mod extras;
-pub mod printing;
 pub mod custom_functions;
 pub mod helpers;
 

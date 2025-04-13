@@ -565,7 +565,7 @@ impl RepositoryQuerying {
                     WHERE left_file_name = $1
                 )
                 GROUP BY left_file_name, right_file_name
-                ORDER BY coupled_revisions, right_file_name DESC
+                ORDER BY coupled_revisions DESC, right_file_name DESC
                 "#
             )
             .await?
@@ -730,7 +730,7 @@ impl RepositoryQuerying {
                     LAST_VALUE(net_added_lines ORDER BY net_added_lines, author) AS main_developer_net_added_lines
                 FROM file_developers
                 GROUP BY file_name
-                ORDER BY ratio(main_developer_net_added_lines, total_net_added_lines), total_net_added_lines DESC
+                ORDER BY ratio(main_developer_net_added_lines, total_net_added_lines) DESC, total_net_added_lines DESC
                 "#
             )
             .await?;
@@ -749,7 +749,7 @@ impl RepositoryQuerying {
                     LAST_VALUE(net_added_lines ORDER BY net_added_lines, author) AS main_developer_net_added_lines
                 FROM module_developers
                 GROUP BY module_name
-                ORDER BY ratio(main_developer_net_added_lines, total_net_added_lines), total_net_added_lines DESC
+                ORDER BY ratio(main_developer_net_added_lines, total_net_added_lines) DESC, total_net_added_lines DESC
                 "#
             )
             .await?;

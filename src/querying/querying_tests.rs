@@ -106,8 +106,8 @@ async fn test_change_couplings_for_file() {
 
     let entry = change_couplings.first().unwrap();
     assert_eq!("src/execution/execution_engine.rs", entry.left_name);
-    assert_eq!("testdata/ftpd_timestamp.txt", entry.right_name);
-    assert_eq!(1, entry.coupled_revisions);
+    assert_eq!("src/parsing/parser.rs", entry.right_name);
+    assert_eq!(13, entry.coupled_revisions);
 }
 
 #[tokio::test]

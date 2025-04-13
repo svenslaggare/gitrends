@@ -100,6 +100,7 @@ pub async fn main(config: WebAppConfig) {
         .route("/api/file/main-developer-structure", get(get_files_main_developer_structure))
 
         .route("/api/module", get(get_modules))
+        .route("/api/module/files/{:module_name}", get(get_module_files))
         .route("/api/module/hotspots", get(get_module_hotspots))
         .route("/api/module/change-coupling", get(get_module_change_coupling))
         .route("/api/module/change-coupling-structure", get(get_module_change_coupling_structure))
@@ -399,6 +400,15 @@ async fn get_modules(
     let repository_querying = state.repository_querying.load();
 
     Ok(Json(repository_querying.modules().await?))
+}
+
+async fn get_module_files(
+    State(state): State<Arc<WebAppState>>,
+    Path(module_name): Path<String>
+) -> WebAppResult<impl IntoResponse> {
+    let repository_querying = state.repository_querying.load();
+
+    Ok(Json(repository_querying.module_files(&module_name).await?))
 }
 
 async fn get_module_hotspots(

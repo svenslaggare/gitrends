@@ -7,6 +7,7 @@ import {OnError} from "../helpers/misc";
 import {ShowSelectedFileModal} from "../helpers/selectedFileModal";
 import {AutoCompleteInput} from "../helpers/autoCompleteInput";
 import {AppConfig} from "../config";
+import {ShowSelectedModuleModal} from "../helpers/selectedModuleModal";
 
 interface ChangeCouplingViewProps {
     config: AppConfig;
@@ -29,6 +30,7 @@ interface ChangeCouplingViewState {
 
 export class ChangeCouplingView extends React.Component<ChangeCouplingViewProps, ChangeCouplingViewState> {
     showSelectedFileModal = React.createRef<ShowSelectedFileModal>();
+    showSelectedModuleModal = React.createRef<ShowSelectedModuleModal>();
 
     constructor(props) {
         super(props);
@@ -50,6 +52,7 @@ export class ChangeCouplingView extends React.Component<ChangeCouplingViewProps,
         return (
             <div>
                 <ShowSelectedFileModal ref={this.showSelectedFileModal} onError={this.props.onError}/>
+                <ShowSelectedModuleModal ref={this.showSelectedModuleModal} onError={this.props.onError}/>
 
                 <div className="pt-3 pb-2 mb-3 border-bottom">
                     {
@@ -59,6 +62,7 @@ export class ChangeCouplingView extends React.Component<ChangeCouplingViewProps,
                                 style={{float: "right", padding: "10px"}}
                                 onClick={() => {
                                     this.showSelectedFileModal.current.clear();
+                                    this.showSelectedModuleModal.current.clear();
 
                                     this.setState({
                                         specificChangeCoupling: [],
@@ -73,6 +77,7 @@ export class ChangeCouplingView extends React.Component<ChangeCouplingViewProps,
                         current={this.state.entryType}
                         onChange={entryType => {
                             this.showSelectedFileModal.current.clear();
+                            this.showSelectedModuleModal.current.clear();
 
                             this.setState(
                                 {
@@ -116,8 +121,15 @@ export class ChangeCouplingView extends React.Component<ChangeCouplingViewProps,
                         switch (column) {
                             case "left_name":
                                 let newName = row[column];
-                                if (this.state.selectedName == newName && this.state.entryType == EntryType.File) {
-                                    this.showSelectedFileModal.current.show(newName);
+                                if (this.state.selectedName == newName) {
+                                    switch (this.state.entryType) {
+                                        case EntryType.File:
+                                            this.showSelectedFileModal.current.show(newName);
+                                            break;
+                                        case EntryType.Module:
+                                            this.showSelectedModuleModal.current.show(newName);
+                                            break;
+                                    }
                                 } else {
                                     this.fetchForEntry(newName);
                                 }

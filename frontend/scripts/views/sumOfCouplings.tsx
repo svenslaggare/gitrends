@@ -6,6 +6,7 @@ import {capitalize, OnError} from "../helpers/misc";
 import {ShowSelectedFileModal} from "../helpers/selectedFileModal";
 import {AppConfig} from "../config";
 import {SumOfCouplingEntry} from "../model";
+import {ShowSelectedModuleModal} from "../helpers/selectedModuleModal";
 
 interface SumOfCouplingViewProps {
     config: AppConfig;
@@ -24,6 +25,7 @@ interface SumOfCouplingViewState {
 
 export class SumOfCouplingView extends React.Component<SumOfCouplingViewProps, SumOfCouplingViewState> {
     showSelectedFileModal = React.createRef<ShowSelectedFileModal>();
+    showSelectedModuleModal = React.createRef<ShowSelectedModuleModal>();
 
     constructor(props) {
         super(props);
@@ -42,7 +44,8 @@ export class SumOfCouplingView extends React.Component<SumOfCouplingViewProps, S
 
         return (
             <div>
-                <ShowSelectedFileModal ref={this.showSelectedFileModal} onError={this.props.onError}/>
+                <ShowSelectedFileModal ref={this.showSelectedFileModal} onError={this.props.onError} />
+                <ShowSelectedModuleModal ref={this.showSelectedModuleModal} onError={this.props.onError} />
 
                 <div className="pt-3 pb-2 mb-3 border-bottom">
                     <EntryTypeSwitcher
@@ -70,15 +73,22 @@ export class SumOfCouplingView extends React.Component<SumOfCouplingViewProps, S
                         {
                             name: "name",
                             display: capitalize(`${entryType} name`),
-                            clickable: this.state.entryType == EntryType.File
+                            clickable: true
                         },
-                        {name: "sum_of_couplings", display: "Sum of couplings", clickable: false},
+                        { name: "sum_of_couplings", display: "Sum of couplings", clickable: false },
                     ]}
                     rows={this.state.sumOfCouplings}
                     extractColumn={(row, name) => row[name]}
                     onValueClick={(row, column) => {
                         if (column == "name") {
-                            this.showSelectedFileModal.current.show(row[column]);
+                            switch (this.state.entryType) {
+                                case EntryType.File:
+                                    this.showSelectedFileModal.current.show(row[column]);
+                                    break;
+                                case EntryType.Module:
+                                    this.showSelectedModuleModal.current.show(row[column]);
+                                    break;
+                            }
                         }
                     }}
                     initialSortOrder={{

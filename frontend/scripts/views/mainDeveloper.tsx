@@ -8,6 +8,7 @@ import {MainDeveloperEntry} from "../model";
 import {HistogramChart} from "../helpers/charts";
 import {AppConfig} from "../config";
 import {ShowSelectedFileModal} from "../helpers/selectedFileModal";
+import {ShowSelectedModuleModal} from "../helpers/selectedModuleModal";
 
 interface MainDeveloperViewProps {
     config: AppConfig;
@@ -23,6 +24,7 @@ interface MainDeveloperViewState {
 
 export class MainDeveloperView extends React.Component<MainDeveloperViewProps, MainDeveloperViewState> {
     showSelectedFileModal = React.createRef<ShowSelectedFileModal>();
+    showSelectedModuleModal = React.createRef<ShowSelectedModuleModal>();
 
     constructor(props) {
         super(props);
@@ -53,6 +55,7 @@ export class MainDeveloperView extends React.Component<MainDeveloperViewProps, M
         return (
             <div>
                 <ShowSelectedFileModal ref={this.showSelectedFileModal} onError={this.props.onError} />
+                <ShowSelectedModuleModal ref={this.showSelectedModuleModal} onError={this.props.onError} />
 
                 <div className="pt-3 pb-2 mb-3 border-bottom">
                     <EntryTypeSwitcher
@@ -87,7 +90,7 @@ export class MainDeveloperView extends React.Component<MainDeveloperViewProps, M
                         {
                             name: "name",
                             display: `${capitalize(this.entryTypeName())} name`,
-                            clickable: this.state.entryType == EntryType.File
+                            clickable: true
                         },
                         { name: "main_developer", display: "Main developer", clickable: false },
                         { name: "ownership", display: "Ownership (%)", clickable: false },
@@ -104,7 +107,14 @@ export class MainDeveloperView extends React.Component<MainDeveloperViewProps, M
                     }}
                     onValueClick={(row, column) => {
                         if (column == "name") {
-                            this.showSelectedFileModal.current.show(row[column]);
+                            switch (this.state.entryType) {
+                                case EntryType.File:
+                                    this.showSelectedFileModal.current.show(row[column]);
+                                    break;
+                                case EntryType.Module:
+                                    this.showSelectedModuleModal.current.show(row[column]);
+                                    break;
+                            }
                         }
                     }}
                     initialSortOrder={{ columnIndex: 2, order: -1 }}

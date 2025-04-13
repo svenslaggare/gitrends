@@ -472,6 +472,23 @@ impl RepositoryQuerying {
         Ok(modules.into_values().collect())
     }
 
+    pub async fn module_files(&self, name: &str) -> QueryingResult<Vec<FileEntry>> {
+        let result_df = self.ctx
+            .sql(
+                r#"
+                SELECT
+                    *
+                FROM latest_revision_file_entries
+                WHERE extract_module_name(file_name) = $1
+                ORDER BY num_code_lines DESC
+                "#
+            )
+            .await?
+            .with_param_values(vec![ScalarValue::Utf8(Some(name.to_owned()))])?;
+
+        collect_rows::<FileEntry>(result_df).await
+    }
+
     pub async fn file_hotspots(&self, count: Option<usize>) -> QueryingResult<Vec<HotspotEntry>> {
         let result_df = self.ctx.sql(
             r#"

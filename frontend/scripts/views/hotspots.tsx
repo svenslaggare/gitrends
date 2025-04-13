@@ -7,6 +7,7 @@ import {EntryType, EntryTypeSwitcher, Table} from "../helpers/view";
 import {capitalize, OnError} from "../helpers/misc";
 import {ShowSelectedFileModal} from "../helpers/selectedFileModal";
 import {AppConfig} from "../config";
+import {ShowSelectedModuleModal} from "../helpers/selectedModuleModal";
 
 interface HotspotsViewProps {
     config: AppConfig;
@@ -22,6 +23,7 @@ interface HotspotsViewState {
 
 export class HotspotsView extends React.Component<HotspotsViewProps, HotspotsViewState> {
     showSelectedFileModal = React.createRef<ShowSelectedFileModal>();
+    showSelectedModuleModal = React.createRef<ShowSelectedModuleModal>();
 
     constructor(props) {
         super(props);
@@ -38,6 +40,7 @@ export class HotspotsView extends React.Component<HotspotsViewProps, HotspotsVie
         return (
             <div>
                 <ShowSelectedFileModal ref={this.showSelectedFileModal} onError={this.props.onError} />
+                <ShowSelectedModuleModal ref={this.showSelectedModuleModal} onError={this.props.onError} />
 
                 <div className="pt-3 pb-2 mb-3 border-bottom">
                     <EntryTypeSwitcher
@@ -63,7 +66,7 @@ export class HotspotsView extends React.Component<HotspotsViewProps, HotspotsVie
                         {
                             name: "name",
                             display: `${capitalize(this.entryTypeName())} name`,
-                            clickable: this.state.entryType == EntryType.File
+                            clickable: true
                         },
                         { name: "num_revisions", display: "Number of revisions", clickable: false },
                         { name: "num_authors", display: "Number of authors", clickable: false },
@@ -74,7 +77,14 @@ export class HotspotsView extends React.Component<HotspotsViewProps, HotspotsVie
                     extractColumn={(row, name) => row[name]}
                     onValueClick={(row, column) => {
                         if (column == "name") {
-                            this.showSelectedFileModal.current.show(row[column]);
+                            switch (this.state.entryType) {
+                                case EntryType.File:
+                                    this.showSelectedFileModal.current.show(row[column]);
+                                    break;
+                                case EntryType.Module:
+                                    this.showSelectedModuleModal.current.show(row[column]);
+                                    break;
+                            }
                         }
                     }}
                     initialSortOrder={{

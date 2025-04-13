@@ -142,9 +142,9 @@ class ApplicationMain extends React.Component<ApplicationMainProps, ApplicationM
                                 <RenderDualLink
                                     to1={"/hotspots"}
                                     to2={"/hotspots-structure"}
-                                    secondaryLink={<i className="fa-solid fa-sitemap"/>}
+                                    secondaryLink={<i className="fa-solid fa-sitemap" title="Show a structure diagram" />}
                                 >
-                                    <i className="fa-solid fa-fire"/>
+                                    <i className="fa-solid fa-fire" />
                                     Hotspots
                                 </RenderDualLink>
                             </li>
@@ -153,16 +153,16 @@ class ApplicationMain extends React.Component<ApplicationMainProps, ApplicationM
                                 <RenderDualLink
                                     to1={"/change-coupling"}
                                     to2={"/change-coupling-structure"}
-                                    secondaryLink={<i className="fa-solid fa-sitemap"/>}
+                                    secondaryLink={<i className="fa-solid fa-sitemap" title="Show a structure diagram" />}
                                 >
-                                    <i className="fa-solid fa-link"/>
+                                    <i className="fa-solid fa-link" />
                                     Change coupling
                                 </RenderDualLink>
                             </li>
 
                             <li className="nav-item">
                                 <RenderLink to="/sum-of-couplings">
-                                    <i className="fa-solid fa-table-list"/>
+                                    <i className="fa-solid fa-table-list" />
                                     Sum of couplings
                                 </RenderLink>
                             </li>
@@ -171,9 +171,9 @@ class ApplicationMain extends React.Component<ApplicationMainProps, ApplicationM
                                 <RenderDualLink
                                     to1={"/main-developer"}
                                     to2={"/main-developer-structure"}
-                                    secondaryLink={<i className="fa-solid fa-sitemap"/>}
+                                    secondaryLink={<i className="fa-solid fa-sitemap" title="Show a structure diagram" />}
                                 >
-                                    <i className="fa-regular fa-user"/>
+                                    <i className="fa-regular fa-user" />
                                     Main developer
                                 </RenderDualLink>
                             </li>

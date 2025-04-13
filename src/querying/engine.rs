@@ -565,7 +565,7 @@ impl RepositoryQuerying {
                     WHERE left_file_name = $1
                 )
                 GROUP BY left_file_name, right_file_name
-                ORDER BY coupled_revisions DESC
+                ORDER BY coupled_revisions, right_file_name DESC
                 "#
             )
             .await?

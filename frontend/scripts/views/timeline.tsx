@@ -237,12 +237,10 @@ export class TimelineView extends React.Component<TimelineViewProps, TimelineVie
     reset() {
         this.setState({
             seekMinDate: this.state.savedMinDate,
-            minCommit: this.findClosestCommit(this.state.savedMinDate)
-        });
+            minCommit: this.findClosestCommit(this.state.savedMinDate),
 
-        this.setState({
             seekMaxDate: this.state.savedMaxDate,
-            minCommit: this.findClosestCommit(this.state.savedMaxDate)
+            maxCommit: this.findClosestCommit(this.state.savedMaxDate)
         });
     }
 

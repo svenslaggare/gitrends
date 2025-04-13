@@ -165,8 +165,14 @@ function StructureChart({ mainDeveloper, onFileSelect, maxNumDevelopers }: Struc
         }
     }
 
+    let onKeyDown = (event: React.KeyboardEvent<SVGSVGElement>) => {
+        if (event.key == "Escape") {
+            zoom(rootNode);
+        }
+    };
+
     return (
-        <svg width={width} height={height}>
+        <svg width={width} height={height} onKeyDown={onKeyDown} tabIndex={-1}>
             <EntryLegend
                 x={0}
                 y={20}

@@ -187,8 +187,14 @@ function StructureChart({ analysisType, hotspotTree, onFileSelect }: StructureCh
 
     }
 
+    let onKeyDown = (event: React.KeyboardEvent<SVGSVGElement>) => {
+        if (event.key == "Escape") {
+            zoom(rootNode);
+        }
+    };
+
     return (
-        <svg width={width} height={height}>
+        <svg width={width} height={height} onKeyDown={onKeyDown} tabIndex={-1}>
             {
                 descendants.map((node, nodeIndex) =>
                     <circle

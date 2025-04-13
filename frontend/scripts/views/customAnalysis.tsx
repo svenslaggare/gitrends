@@ -18,6 +18,7 @@ interface CustomAnalysisViewProps {
 
 interface CustomAnalysisViewState {
     query: string;
+    queryRunning: boolean;
     result: CustomAnalysis;
 
     savedQueries: SavedQuery[];
@@ -35,6 +36,7 @@ export class CustomAnalysisView extends React.Component<CustomAnalysisViewProps,
 
         this.state = {
             query: "SELECT * FROM file_hotspots;",
+            queryRunning: false,
             result: {
                 columns: [],
                 rows: []
@@ -160,13 +162,24 @@ export class CustomAnalysisView extends React.Component<CustomAnalysisViewProps,
                 </div>
 
                 <br/>
+
                 <button
                     className="btn btn-primary btn-lg"
-                    onClick={() => {
-                        this.performQuery();
-                    }}
+                    onClick={() => { this.performQuery(); }}
+                    disabled={this.state.queryRunning}
                 >
-                    Execute
+                    <Conditional
+                        condition={!this.state.queryRunning}
+                        trueBranch={() =>
+                            <span>Execute</span>
+                        }
+                        falseBranch={() =>
+                            <span>
+                                <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true" />
+                                Running...
+                            </span>
+                        }
+                    />
                 </button>
 
                 <br />
@@ -220,14 +233,22 @@ export class CustomAnalysisView extends React.Component<CustomAnalysisViewProps,
     }
 
     performQuery() {
+        this.setState({
+            queryRunning: true
+        });
+
         axios.post(`/api/custom-analysis`, { "query": this.state.query })
             .then(response => {
                 this.setState({
-                    result: response.data
+                    result: response.data,
+                    queryRunning: false
                 });
             })
             .catch(error => {
                 this.props.onError(error);
+                this.setState({
+                    queryRunning: false
+                });
             });
     }
 

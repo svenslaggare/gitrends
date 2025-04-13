@@ -73,7 +73,7 @@ If this file is not specified, or a file don't match above patterns, the folder 
 When writing custom analysis, the function `extract_module_name` can then be used to extract the module name of a file.
 
 ### Ignore files
-The `ignore.txt` file in the `data_dir` allows you to ignore certain files from being used in the analysis (they are still indexed, so no reindexing required).
+The `ignore.txt` file in the `data_dir` allows you to ignore certain files from being used in the analysis (they are still indexed, so no reindexing required when changing).
 
 ```text
 src/*.rs

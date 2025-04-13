@@ -92,16 +92,25 @@ export class Table extends React.Component<TableProps, TableState> {
     }
 
     render() {
-        let rows = [...this.props.rows];
-
-        if (this.state.hasSetTableSortOrder) {
-            let tableSortOrder = this.state.tableSortOrder;
-            let column = this.props.columns[tableSortOrder.columnIndex];
-            rows.sort((a, b) => this.sortRow(column, a, b) * tableSortOrder.order);
-        }
-
         return (
-            <table className="table table-striped table-sm">
+            <div>
+                <div style={{ float: "right" }}>
+                    <button className="btn btn-outline-secondary" onClick={() => { this.exportData(); }}>
+                        <i className="fa-solid fa-file-csv" />
+                    </button>
+                </div>
+
+                {this.renderTable(this.getRows())}
+
+                <br />
+                <br />
+            </div>
+        );
+    }
+
+    renderTable(rows: any[]) {
+        return (
+            <table className="table table-striped table-sm table-hover">
                 <thead>
                 <tr>
                     <th scope="col">#</th>
@@ -154,7 +163,47 @@ export class Table extends React.Component<TableProps, TableState> {
                 }
                 </tbody>
             </table>
+
         );
+    }
+
+    exportData() {
+        let lines = [];
+        lines.push(this.props.columns.map(column => column.name).join(","));
+        for (let row of this.getRows()) {
+            let rowColumns = this.props.columns.map(column => this.props.extractColumn(row, column.name));
+            lines.push(rowColumns.join(","))
+        }
+
+        const file = new File(
+            [lines.join("\n")],
+            "file.csv",
+            {
+                type: 'text/plain',
+            }
+        );
+
+        const fileURL = URL.createObjectURL(file);
+
+        const downloadLink = document.createElement('a');
+        downloadLink.href = fileURL;
+        downloadLink.download = `exported-${new Date().toISOString()}.csv`;
+        document.body.appendChild(downloadLink);
+        downloadLink.click();
+
+        URL.revokeObjectURL(fileURL);
+    }
+
+    getRows() {
+        let rows = [...this.props.rows];
+
+        if (this.state.hasSetTableSortOrder) {
+            let tableSortOrder = this.state.tableSortOrder;
+            let column = this.props.columns[tableSortOrder.columnIndex];
+            rows.sort((a, b) => this.sortRow(column, a, b) * tableSortOrder.order);
+        }
+
+        return rows;
     }
 
     sortRow(column: TableColumn, row1: any, row2: any) {

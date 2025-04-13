@@ -2,6 +2,8 @@ import React from "react";
 
 import axios from "axios";
 
+import Moment from "react-moment";
+
 import AceEditor from "react-ace";
 import "ace-builds/src-noconflict/mode-sql";
 import "ace-builds/src-noconflict/theme-dracula";
@@ -9,7 +11,6 @@ import "ace-builds/src-noconflict/theme-dracula";
 import { OnError} from "../helpers/misc";
 import { CustomAnalysis } from "../model";
 import {Conditional, Table} from "../helpers/view";
-import Moment from "react-moment";
 
 interface CustomAnalysisViewProps {
     onError: OnError;
@@ -168,14 +169,6 @@ export class CustomAnalysisView extends React.Component<CustomAnalysisViewProps,
                     Execute
                 </button>
 
-                <button
-                    className="btn btn-primary btn-lg"
-                    style={{ marginLeft: "1em" }}
-                    onClick={() => { this.exportData(); }}
-                >
-                    Export
-                </button>
-
                 <br />
                 <br />
 
@@ -297,33 +290,6 @@ export class CustomAnalysisView extends React.Component<CustomAnalysisViewProps,
         } catch (e) {
             this.props.onError(e);
         }
-    }
-
-    exportData() {
-        let lines = [];
-        lines.push(this.state.result.columns.join(","));
-        for (let row of this.state.result.rows) {
-            lines.push(row.join(","))
-        }
-
-        const file = new File(
-            [lines.join("\n")],
-            "file.csv",
-            {
-                type: 'text/plain',
-            }
-        );
-
-        const fileURL = URL.createObjectURL(file);
-
-        const downloadLink = document.createElement('a');
-        downloadLink.href = fileURL;
-        downloadLink.download = `exported-${new Date().toISOString()}.csv`;
-        document.body.appendChild(downloadLink);
-        downloadLink.click();
-
-        URL.revokeObjectURL(fileURL);
-
     }
 }
 

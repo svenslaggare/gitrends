@@ -23,7 +23,7 @@ The following behavior code analysis are implemented:
 ### Using docker image
 * Run `./build_docker.sh` to build the docker image (produces an image called `gitrends:latest`).
 * `$SRC_DIR` should contain a folder that contains source directories to index while `$DATA_DIR` is where output is placed.
-* Run as `docker run -it --rm -v $SRC_DIR:/src -v $DATA_DIR:/data -p 9000:9000 gitrends:latest /data/config.yaml`
+* Run as `docker run -it --rm -v $SRC_DIR:/src -v $DATA_DIR:/data -p 9090:9090 gitrends:latest /data/config.yaml`
 
 ### Using standalone
 * Unzip the prebuilt binaries and frontend in a folder
@@ -34,7 +34,7 @@ The application is configured through a YAML file:
 ```yaml
 source_dir: /home/antjans/Code/sqlgrep
 data_dir: data/sqlgrep
-listen: 0.0.0.0:9000 # If running in docker
+listen: 0.0.0.0:9090 # If running in docker
 ```
 
 * `source_dir` is the repository to index.
@@ -42,7 +42,7 @@ listen: 0.0.0.0:9000 # If running in docker
 
 After indexing, the program no longer need to access the repository, and no source code is extracted to the index (code statistics are though).
 
-After running the application (see above), browse to http://localhost:9000 to access the tool.
+After running the application (see above), browse to http://localhost:9090 to access the tool.
 
 ### Module definitions
 The `modules.txt` file in the `data_dir` allows you to define the module structure of your repository.

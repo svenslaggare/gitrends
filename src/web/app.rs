@@ -113,7 +113,7 @@ pub async fn main(config: WebAppConfig) {
         .with_state(state.clone())
         ;
 
-    let address = config.listen.unwrap_or_else(|| SocketAddr::from_str("127.0.0.1:9000").unwrap());
+    let address = config.listen.unwrap_or_else(|| SocketAddr::from_str("127.0.0.1:9090").unwrap());
     let listener = TcpListener::bind(&address).await.unwrap();
     info!("Listening on http://{}", address);
 

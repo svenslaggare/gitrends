@@ -1,6 +1,6 @@
 [package]
 name = "gitrends"
-version = "0.1.0"
+version = "1.0.0"
 edition = "2021"
 authors = ["Anton Jansson <anton_jansson@live.se>"]
 description = "Web-based behavior code analysis tool"

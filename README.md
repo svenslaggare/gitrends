@@ -68,7 +68,7 @@ Cargo* => build
 .github/workflows/**/* => ci
 ```
 
-If this file is not specified, or a file don't match above patterns, the folder of the file will be used as module instead.
+If a file don't match above patterns, the folder of the file will be used as module instead.
 
 When writing custom analysis, the function `extract_module_name` can then be used to extract the module name of a file.
 

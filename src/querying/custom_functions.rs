@@ -7,7 +7,7 @@ use datafusion::common::cast::as_string_array;
 use datafusion::logical_expr::{create_udf, ColumnarValue, Volatility};
 use datafusion::prelude::*;
 
-use crate::querying::extras::{AuthorNormalizer, IgnoreFile, ModuleDefinitions};
+use crate::querying::data_transformers::{AuthorNormalizer, IgnoreFile, ModuleDefinitions};
 use crate::querying::{QueryingResult};
 
 pub fn add(data_directory: &Path, ctx: &SessionContext) -> QueryingResult<()> {

@@ -13,8 +13,9 @@ use datafusion::prelude::*;
 use crate::indexing::{GIT_FILE_ENTRIES_PATH, GIT_LOG_PATH};
 use crate::indexing::indexer::GitLogEntry;
 use crate::querying::{custom_functions, QueryingResult};
-use crate::querying::helpers::{add_optional_limit, collect_rows, collect_rows_into, yield_rows, FromRow};
+use crate::querying::model_data_extraction::{collect_rows, collect_rows_into, yield_rows, FromRow};
 use crate::querying::model::{ChangeCouplingEntry, CommitSpreadEntry, CustomAnalysis, CustomValue, FileEntry, FileHistoryEntry, HotspotEntry, MainDeveloperEntry, Module, RepositorySummary, SumOfCouplingEntry};
+use crate::querying::querying_helpers::add_optional_limit;
 
 #[derive(Clone, Deserialize, Serialize)]
 pub struct RepositoryQueryingConfig {

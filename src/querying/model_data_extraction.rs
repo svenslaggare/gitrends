@@ -1,6 +1,5 @@
 use datafusion::arrow::array::{ArrayRef, AsArray, RecordBatch};
 use datafusion::arrow::datatypes::{Float64Type, Int64Type, UInt64Type};
-use datafusion::common::DataFusionError;
 use datafusion::dataframe::DataFrame;
 
 use crate::indexing::indexer::GitLogEntry;
@@ -19,13 +18,6 @@ pub fn yield_rows<F: FnMut(&[&ArrayRef], usize)>(results: Vec<RecordBatch>, num_
         for record_index in 0..batch.column(0).len() {
             callback(&row_columns, record_index);
         }
-    }
-}
-
-pub fn add_optional_limit(result_df: DataFrame, count: Option<usize>) -> Result<DataFrame, DataFusionError> {
-    match count {
-        Some(count) => result_df.limit(0, Some(count)),
-        None => Ok(result_df)
     }
 }
 

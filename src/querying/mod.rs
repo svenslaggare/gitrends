@@ -3,14 +3,15 @@ use thiserror::Error;
 
 pub mod engine;
 pub mod model;
-pub mod extras;
+pub mod data_transformers;
 pub mod custom_functions;
-pub mod helpers;
+pub mod model_data_extraction;
+pub mod querying_helpers;
 
 #[cfg(test)]
 pub mod querying_tests;
 
-use crate::querying::extras::ModuleDefinitionError;
+use crate::querying::data_transformers::ModuleDefinitionError;
 
 type QueryingResult<T> = Result<T, QueryingError>;
 

@@ -74,6 +74,12 @@ impl AuthorNormalizer {
     }
 }
 
+#[derive(Debug, Error)]
+pub enum ModuleDefinitionError {
+    #[error("Pattern: {0}")]
+    Pattern(PatternError),
+}
+
 pub struct IgnoreFile {
     patterns: Vec<Pattern>
 }
@@ -104,10 +110,4 @@ impl IgnoreFile {
 
         false
     }
-}
-
-#[derive(Debug, Error)]
-pub enum ModuleDefinitionError {
-    #[error("Pattern: {0}")]
-    Pattern(PatternError),
 }

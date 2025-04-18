@@ -1,9 +1,9 @@
-use datafusion::arrow::array::{ArrayRef, AsArray, RecordBatch};
-use datafusion::arrow::datatypes::{Float64Type, Int64Type, UInt64Type};
+use datafusion::arrow::array::{ArrayRef, ArrowPrimitiveType, AsArray, RecordBatch};
+use datafusion::arrow::datatypes::*;
 use datafusion::dataframe::DataFrame;
 
 use crate::indexing::indexer::GitLogEntry;
-use crate::querying::model::{Author, CommitSpreadEntry, FileEntry, FileHistoryEntry, HotspotEntry, MainDeveloperEntry, SumOfCouplingEntry};
+use crate::querying::model::*;
 use crate::querying::QueryingResult;
 
 pub fn yield_rows<F: FnMut(&[&ArrayRef], usize)>(results: Vec<RecordBatch>, num_columns: usize, mut callback: F) {
@@ -166,6 +166,69 @@ impl FromRow for CommitSpreadEntry {
             module_name,
             author,
             num_revisions
+        }
+    }
+}
+
+impl CustomValue {
+    pub fn from_column(column_def: &FieldRef, column: &ArrayRef, record_index: usize) -> Option<CustomValue> {
+        fn extract_primitive<T: ArrowPrimitiveType<Native = U>, U>(column: &ArrayRef, record_index: usize) -> Option<U> {
+            if column.is_valid(record_index) {
+                Some(column.as_primitive::<T>().value(record_index))
+            } else {
+                None
+            }
+        }
+
+        match column_def.data_type() {
+            DataType::Utf8 => {
+                if column.is_valid(record_index) {
+                    Some(CustomValue::String(Some(column.as_string_view().value(record_index).to_owned())))
+                } else {
+                    Some(CustomValue::String(None))
+                }
+            }
+            DataType::Utf8View => {
+                if column.is_valid(record_index) {
+                    Some(CustomValue::String(Some(column.as_string_view().value(record_index).to_owned())))
+                } else {
+                    Some(CustomValue::String(None))
+                }
+            }
+            DataType::Int8 => {
+                Some(CustomValue::Int8(extract_primitive::<Int8Type, _>(column, record_index)))
+            }
+            DataType::Int32 => {
+                Some(CustomValue::Int32(extract_primitive::<Int32Type, _>(column, record_index)))
+            }
+            DataType::Int64 => {
+                Some(CustomValue::Int64(extract_primitive::<Int64Type, _>(column, record_index)))
+            }
+            DataType::UInt8 => {
+                Some(CustomValue::UInt8(extract_primitive::<UInt8Type, _>(column, record_index)))
+            }
+            DataType::UInt32 => {
+                Some(CustomValue::UInt32(extract_primitive::<UInt32Type, _>(column, record_index)))
+            }
+            DataType::UInt64 => {
+                Some(CustomValue::UInt64(extract_primitive::<UInt64Type, _>(column, record_index)))
+            }
+            DataType::Boolean => {
+                if column.is_valid(record_index) {
+                    Some(CustomValue::Bool(Some(column.as_boolean().value(record_index))))
+                } else {
+                    Some(CustomValue::Bool(None))
+                }
+            }
+            DataType::Float32 => {
+                Some(CustomValue::Float32(extract_primitive::<Float32Type, f32>(column, record_index)))
+            }
+            DataType::Float64 => {
+                Some(CustomValue::Float64(extract_primitive::<Float64Type, f64>(column, record_index)))
+            }
+            _ => {
+                None
+            }
         }
     }
 }
